@@ -19,7 +19,7 @@
 #include <hardware.h>
 
 // Lib
-#include <protocol/opium/op_general.h>
+#include <op_general.h>
 
 // Definition
 #include <definition/datatype_megaxone.h>

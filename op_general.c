@@ -55,13 +55,13 @@ U8 comWingScan(U8 comWingID)
 	// Type assignation
 	switch (readValue)
 	{
-		case COM_WING_VALUE_NRF: wingType = nrf;				break;
-		case COM_WING_VALUE_RS485: wingType = rs485;			break;
-		case COM_WING_VALUE_SPI: wingType = spi;				break;
-		case COM_WING_VALUE_BLUETOOTH: wingType = bluetooth;	break;
-		case COM_WING_VALUE_ETHERNET: wingType = ethernet;		break;
-		case COM_WING_VALUE_LOL: wingType = lol;				break;
-		default: wingType = unknown;
+		case COM_WING_VALUE_NRF: wingType = CWTnrf;				break;
+		case COM_WING_VALUE_RS485: wingType = CWTrs485;			break;
+		case COM_WING_VALUE_SPI: wingType = CWTspi;				break;
+		case COM_WING_VALUE_BLUETOOTH: wingType = CWTbluetooth;	break;
+		case COM_WING_VALUE_ETHERNET: wingType = CWTethernet;		break;
+		case COM_WING_VALUE_LOL: wingType = CWTlol;				break;
+		default: wingType = CWTunknown;
 	}
 	// --------------------- //
 
@@ -69,9 +69,9 @@ U8 comWingScan(U8 comWingID)
 	if (wingType != COMWingControlReg[comWingID].type)
 	{
 		// -- Initialise the wing -- //
-		if (COMWingControlReg[comWingID].type != unknown)
+		if (COMWingControlReg[comWingID].type != CWTunknown)
 		{
-			COMWingControlReg[comWingID].state = detected;					//A new wing as been detected
+			COMWingControlReg[comWingID].state = CWSdetected;					//A new wing as been detected
 		}
 		// ------------------------ //
 	}
@@ -91,47 +91,47 @@ U8 comWingAssign(U8 comWingID)
 {
 	tCOMWingControl * tempCOMWingControlReg = &(COMWingControlReg[comWingID]);
 
-	if (tempCOMWingControlReg->state != undetected)
+	if (tempCOMWingControlReg->state != CWSundetected)
 	{
 		// -- Assign ISR and Control -- //
 		switch (tempCOMWingControlReg->type)
 		{
-			case nrf:
+			case CWTnrf:
 			{
 				tempCOMWingControlReg->comWingInit = NULL;
 				tempCOMWingControlReg->comWingControl = NULL;
 				tempCOMWingControlReg->comWingEngine = NULL;
 				break;
 			}
-			case rs485:
+			case CWTrs485:
 			{
 				tempCOMWingControlReg->comWingInit = &opRS485Init;
 				tempCOMWingControlReg->comWingControl = &opRS485Control;
 				tempCOMWingControlReg->comWingEngine = &opRS485Engine;
 				break;
 			}
-			case spi:
+			case CWTspi:
 			{
 				tempCOMWingControlReg->comWingInit = NULL;
 				tempCOMWingControlReg->comWingControl = NULL;
 				tempCOMWingControlReg->comWingEngine = NULL;
 				break;
 			}
-			case bluetooth:
+			case CWTbluetooth:
 			{
 				tempCOMWingControlReg->comWingInit = NULL;
 				tempCOMWingControlReg->comWingControl = NULL;
 				tempCOMWingControlReg->comWingEngine = NULL;
 				break;
 			}
-			case ethernet:
+			case CWTethernet:
 			{
 				tempCOMWingControlReg->comWingInit = NULL;
 				tempCOMWingControlReg->comWingControl = NULL;
 				tempCOMWingControlReg->comWingEngine = NULL;
 				break;
 			}
-			case lol:
+			case CWTlol:
 			{
 				tempCOMWingControlReg->comWingInit = NULL;
 				tempCOMWingControlReg->comWingControl = NULL;
@@ -143,7 +143,7 @@ U8 comWingAssign(U8 comWingID)
 		// ---------------------------- //
 
 		// -- Set the State -- //
-		tempCOMWingControlReg->state = assigned;
+		tempCOMWingControlReg->state = CWSassigned;
 		// ------------------- //
 
 		return STD_EC_SUCCESS;
@@ -163,38 +163,38 @@ U8 comWingEngine(U8 comWingID)
 {
 	switch (COMWingControlReg[comWingID].state)
 	{
-		case undetected:
+		case CWSundetected:
 		{
 			// Scan for the presence of a wing
 			break;
 		}
-		case detected:
+		case CWSdetected:
 		{
 			// Assign the correct function for this type of wing
 			break;
 		}
-		case assigned:
+		case CWSassigned:
 		{
 			// Initialise the specific control reg
 			break;
 		}
-		case idle:
+		case CWSidle:
 		{
 			// Idle action
 
 			break;
 		}
-		case busy:
+		case CWSbusy:
 		{
 			// Wait for idle
 			break;
 		}
-		case error:
+		case CWSerror:
 		{
 			// Handle error
 			break;
 		}
-		default: COMWingControlReg[comWingID].state = error;
+		default: COMWingControlReg[comWingID].state = CWSerror;
 	}
 
 	return STD_EC_SUCCESS;

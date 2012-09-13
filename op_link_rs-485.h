@@ -45,11 +45,11 @@ typedef enum
 }tOpRS485LinkState;
 
 // Link SubState
-typedef enum
+typedef enum 
 {
-	init = 0,
-	active,
-	wait
+	RSSinit = 0,
+	RSSactive,
+	RSSwait
 }tOpRS485LinkSubState;
 
 // Slot control

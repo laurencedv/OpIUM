@@ -21,7 +21,7 @@
 // Layers
 
 // Lib
-#include <protocol/opium/op_link_rs-485.h>
+#include <op_link_rs-485.h>
 
 // Definition
 #include <definition/datatype_megaxone.h>
@@ -53,24 +53,24 @@
 // COM wing state
 typedef enum
 {
-	undetected = 0,
-	detected,
-	assigned,
-	idle,
-	busy,
-	error,
+	CWSundetected = 0,
+	CWSdetected,
+	CWSassigned,
+	CWSidle,
+	CWSbusy,
+	CWSerror,
 }tCOMWingState;
 
 // COM wing type
 typedef enum
 {
-	unknown = 0,
-	nrf,
-	rs485,
-	spi,
-	bluetooth,
-	ethernet,
-	lol
+	CWTunknown = 0,
+	CWTnrf,
+	CWTrs485,
+	CWTspi,
+	CWTbluetooth,
+	CWTethernet,
+	CWTlol
 }tCOMWingType;
 
 // COM wing control
@@ -91,12 +91,12 @@ typedef union
 // Packet Type
 typedef enum
 {
-	nodeCommand = 0x00,
-	nodeDiagnostic = 0x01,
-	nodeFirmwareUpdate = 0x02,
-	data = 0x10,
-	netCommand = 0x40,
-	netDiagnostic = 0x41
+	OPPTnodeCommand = 0x00,
+	OPPTnodeDiagnostic = 0x01,
+	OPPTnodeFirmwareUpdate = 0x02,
+	OPPTdata = 0x10,
+	OPPTnetCommand = 0x40,
+	OPPTnetDiagnostic = 0x41
 }tOpPacketType;
 
 // Packet Header structure

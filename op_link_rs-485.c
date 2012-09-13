@@ -55,7 +55,7 @@ U8 opRS485Init(U8 comWingID)
 			tempOpRS485ControlReg->currentFrame = 0;
 			tempOpRS485ControlReg->currentSlot = 0;
 			tempOpRS485ControlReg->linkState = detect;
-			tempOpRS485ControlReg->linkSubState = init;
+			tempOpRS485ControlReg->linkSubState = RSSinit;
 			tempOpRS485ControlReg->slotNb = 0;
 			tempOpRS485ControlReg->utilityCnt = 0;
 			// ------------------------ //
