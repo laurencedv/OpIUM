@@ -19,9 +19,11 @@
 #include <hardware.h>
 
 // Layers
+#include <op_link_rs-485.h>
 
 // Lib
-#include <op_link_rs-485.h>
+#include <soft/pic32_realtime.h>
+#include <peripheral/pic32_adc.h>
 
 // Definition
 #include <definition/datatype_megaxone.h>
@@ -34,18 +36,23 @@
 
 // ################## Defines ################### //
 // COM wings
-#define COM_WING_1	0
-#define COM_WING_2	1
-#define COM_WING_3	2
-#define COM_WING_4	3
+#define COM_WING_0	0
+#define COM_WING_1	1
+#define COM_WING_2	2
+#define COM_WING_3	3
 
 // COM wings ID value	(ADC value >>4)
-#define COM_WING_VALUE_NRF			0x05
+#define COM_WING_VALUE_NRF		0x05
 #define COM_WING_VALUE_RS485		0x3A
-#define COM_WING_VALUE_SPI			0x00
+#define COM_WING_VALUE_SPI		0x00
 #define COM_WING_VALUE_BLUETOOTH	0x20
 #define COM_WING_VALUE_ETHERNET		0x33
-#define COM_WING_VALUE_LOL			0x3F
+#define COM_WING_VALUE_LOL		0x3F
+
+// COM wings detection
+#define COM_WING_DETECT_PERIOD		100
+#define COM_WING_DETECT_PERIOD_AT_RUN	1000
+#define COM_WING_DETECT_RESULT_NB	10
 // ############################################## //
 
 
@@ -53,7 +60,8 @@
 // COM wing state
 typedef enum
 {
-	CWSundetected = 0,
+	CWSinit = 0,
+	CWSundetected,
 	CWSdetected,
 	CWSassigned,
 	CWSidle,
@@ -76,15 +84,15 @@ typedef enum
 // COM wing control
 typedef union
 {
-	U32 all[3];
+	U32 all[5];
 	struct
 	{
-		tCOMWingType type;
-		tCOMWingState state;
-		void * controlReg;
-		U8 (*comWingInit)(U8 comWingID);
-		U8 (*comWingControl)(U8 comWingID);
-		U8 (*comWingEngine)(U8 comWingID);
+		tCOMWingType type;				//Type of the COM wing connected
+		tCOMWingState state;				//General state of the COM wing
+		void * controlReg;				//Control reg for the specific type of COM wing
+		U8 (*comWingInit)(U8 comWingID);		//Init function
+		U8 (*comWingControl)(U8 comWingID);		//Control function
+		U8 (*comWingEngine)(U8 comWingID);		//Engine function
 	};
 }tCOMWingControl;
 
