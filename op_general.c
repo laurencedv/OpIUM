@@ -19,10 +19,19 @@
 //COM Wing ID AN address
 #if COM_WING_NB == 1
 const tADCInput comIDan[1] = {COM0_ID_AN};
+const U8 comTimerID[1] = {COM0_TIMER_ID};
+const U8 comUartID[1] = {COM0_UART_ID};
+const U8 comSPIID[1] = {COM0_SPI_ID};
 #elif COM_WING_NB == 2
 const tADCInput comIDan[2] = {COM0_ID_AN,COM1_ID_AN};
+const U8 comTimerID[2] = {COM0_TIMER_ID,COM1_TIMER_ID};
+const U8 comUartID[2] = {COM0_UART_ID,COM1_UART_ID};
+const U8 comSPIID[2] = {COM0_SPI_ID,COM1_SPI_ID};
 #elif COM_WING_NB == 4
 const tADCInput comIDan[4] = {COM0_ID_AN,COM1_ID_AN,COM2_ID_AN,COM3_ID_AN};
+const U8 comTimerID[4] = {COM0_TIMER_ID,COM1_TIMER_ID,COM2_TIMER_ID,COM3_TIMER_ID};
+const U8 comUartID[4] = {COM0_UART_ID,COM1_UART_ID,COM2_UART_ID,COM3_UART_ID};
+const U8 comSPIID[4] = {COM0_SPI_ID,COM1_SPI_ID,COM2_SPI_ID,COM3_SPI_ID};
 #endif
 // ############################################## //
 
@@ -91,7 +100,7 @@ U8 comWingIdentify(U8 comWingID, U16 IDData)
 		if (COMWingControl[comWingID].type == CWTunknown)
 			COMWingControl[comWingID].state = CWSundetected;//Reset to undetected state
 		else
-			COMWingControl[comWingID].state = CWSinit;	//A new wing as been detected
+			COMWingControl[comWingID].state = CWSassign;	//A new wing as been detected
 		// ------------------------ //
 	}
 	// ----------------------------- //
@@ -271,13 +280,23 @@ U8 comWingEngine(U8 comWingID)
 	{
 		//* -- No Wing -- *//
 		case CWSundetected:	workPtr->type = CWTunknown;	break;
-		//* -- Init ----- *//
-		case CWSinit:
+		//* -- Assign --- *//
+		case CWSassign:
 		{
 			// -- Assign variables and function -- //
 			comWingAssign(comWingID);
 			// ----------------------------------- //
 
+			workPtr->state = CWSinit;
+			break;
+		}
+		//* -- Init ----- *//
+		case CWSinit:
+		{
+			// -- Init and save the control Reg -- //
+			workPtr->controlReg = workPtr->comWingInit(comWingID);
+			// ----------------------------------- //
+			
 			workPtr->state = CWSidle;
 			break;
 		}

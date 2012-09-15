@@ -18,6 +18,9 @@
 #include <hardware.h>
 
 // Lib
+#include <peripheral/pic32_uart.h>
+#include <peripheral/pic32_timer.h>
+#include <op_general.h>
 #include <stdlib.h>
 
 // Definition
@@ -92,7 +95,16 @@ typedef union
 * @arg		U8 comWingID					ID of the selected COM Wing
 * @return	U8 errorCode					STD Error Code
 */
-U8 opRS485Init(U8 comWingID);
+tOpRS485Control * opRS485Init(U8 comWingID);
+
+/**
+* \fn		U8 opRS485Destroy(tOpRS485Control * controlToDestroy)
+* @brief	Destroy all memory associated with a RS-485 COM Wing
+* @note		This can fail! watch the return value as it will tell you if it was successful
+* @arg		tOpRS485Control * controlToDestroy		Pointer to the control reg to be destroyed
+* @return	U8 errorCode					STD Error Code
+*/
+U8 opRS485Destroy(tOpRS485Control * controlToDestroy);
 
 /**
 * \fn		U8 opRS485Control (U8 comWingID)

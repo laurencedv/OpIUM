@@ -17,6 +17,8 @@
 
 // ################## Variables ################# //
 extern U32 heapAvailable;
+extern U8 comTimerID[];
+extern U8 comUartID[];
 
 // ==== Control ==== //
 tOpRS485Control * opRS485ControlReg[COM_WING_NB];
@@ -32,24 +34,36 @@ tOpRS485Control * opRS485ControlReg[COM_WING_NB];
 * @arg		U8 comWingID					ID of the selected COM Wing
 * @return	U8 errorCode					STD Error Code
 */
-U8 opRS485Init(U8 comWingID)
+tOpRS485Control * opRS485Init(U8 comWingID)
 {
 	tOpRS485Control * tempOpRS485ControlReg;
 	// -- Allocate Control -- //
 	tempOpRS485ControlReg = (tOpRS485Control*)malloc(sizeof(tOpRS485Control));
 	if (tempOpRS485ControlReg != NULL)
 	{
+		//Count the allocated ram
+		heapAvailable -= sizeof(tOpRS485Control);
+
 		// -- Allocate the slot control -- //
 		tempOpRS485ControlReg->slotControl = (tOpRS485Slot*)malloc(sizeof(tOpRS485Slot));
 		if (tempOpRS485ControlReg->slotControl != NULL)
 		{
 			//Count the allocated ram
-			heapAvailable -= (sizeof(tOpRS485Control)+sizeof(tOpRS485Slot));
+			heapAvailable -= sizeof(tOpRS485Slot);
 
 			// -- Assign Hardware -- //
-			tempOpRS485ControlReg->timerID = 0;									// TODO
-			tempOpRS485ControlReg->uartID = 0;
+			tempOpRS485ControlReg->timerID = comTimerID[comWingID];									// TODO
+			tempOpRS485ControlReg->uartID = comUartID[comWingID];
 			// --------------------- //
+
+			// -- Init Hardware -- //
+			if (uartInit(tempOpRS485ControlReg->uartID,UART_TX_INT_TSR_EMPTY|UART_RX_INT_DATA_READY|UART_MODE_8N1) != STD_EC_SUCCESS)
+				break;
+			if (uartSetBaudRate(tempOpRS485ControlReg->uartID, COM_UART_LOW_SPEED) != STD_EC_SUCCESS)
+				break;
+			if (timerInit(tempOpRS485ControlReg->timerID,TMR_CS_PBCLK|TMR_16BIT|TMR_DIV_1) != STD_EC_SUCCESS)
+				break;
+			// ------------------- //
 
 			// -- Initialise Control -- //
 			tempOpRS485ControlReg->currentFrame = 0;
@@ -61,16 +75,44 @@ U8 opRS485Init(U8 comWingID)
 			// ------------------------ //
 
 			opRS485ControlReg[comWingID] = tempOpRS485ControlReg;	//Save the Control Reg
-
-			return STD_EC_SUCCESS;
 		}
 		else
-			free(tempOpRS485ControlReg);			//Free up the Control
+		{
+			// -- Something went Wrong -- //
+			opRS485Destroy(tempOpRS485ControlReg);			//Destroy the control Reg
+			tempOpRS485ControlReg = NULL;				//Output a NULL pointer
+			// -------------------------- //
+		}
 		// ------------------------------- //
 	}
 	// ---------------------- //
 
-	return STD_EC_FAIL;
+	return tempOpRS485ControlReg;
+}
+
+/**
+* \fn		U8 opRS485Destroy(tOpRS485Control * controlToDestroy)
+* @brief	Destroy all memory associated with a RS-485 COM Wing
+* @note		This can fail! watch the return value as it will tell you if it was successful
+* @arg		tOpRS485Control * controlToDestroy		Pointer to the control reg to be destroyed
+* @return	U8 errorCode					STD Error Code
+*/
+U8 opRS485Destroy(tOpRS485Control * controlToDestroy)
+{
+	U8 errorCode = STD_EC_FAIL;
+
+	// -- Destroy all memory allocated -- //
+	if (free(controlToDestroy->slotControl) != NULL)
+		heapAvailable += (sizeof(tOpRS485Slot));
+
+	if (free(controlToDestroy) != NULL)
+	{
+		heapAvailable += (sizeof(tOpRS485Control));
+		errorCode = STD_EC_SUCCESS;
+	}
+	// ---------------------------------- //
+
+	return errorCode;
 }
 
 /**
@@ -80,7 +122,7 @@ U8 opRS485Init(U8 comWingID)
 * @arg		U8 comWingID					ID of the selected COM Wing
 * @return	U8 errorCode					STD Error Code
 */
-U8 opRS485Control (U8 comWingID)
+U8 opRS485Control(U8 comWingID)
 {
 
 }
@@ -92,7 +134,7 @@ U8 opRS485Control (U8 comWingID)
 * @arg		U8 comWingID					ID of the selected COM Wing
 * @return	U8 errorCode					STD Error Code
 */
-U8 opRS485Engine (U8 comWingID)
+U8 opRS485Engine(U8 comWingID)
 {
 
 }

@@ -53,6 +53,15 @@
 #define COM_WING_DETECT_PERIOD		100
 #define COM_WING_DETECT_PERIOD_AT_RUN	1000
 #define COM_WING_DETECT_RESULT_NB	10
+
+// COM Peripherals Speed
+#define COM_UART_LOW_SPEED		100000			//COM's UART Baud Rate at low speed
+#define COM_UART_MEDIUM_SPEED		1000000			//COM's UART Baud Rate at medium speed
+#define COM_UART_HIGH_SPEED		10000000		//COM's UART Baud Rate at high speed
+
+#define COM_SPI_LOW_SPEED		1000000			//COM's SPI bit Rate at low speed
+#define COM_SPI_MEDIUM_SPEED		10000000		//COM's SPI bit Rate at medium speed (max for nRF24L01+)
+#define COM_SPI_HIGH_SPEED		20000000		//COM's SPI bit Rate at high speed (max for µOpioid)
 // ############################################## //
 
 
@@ -61,6 +70,7 @@
 typedef enum
 {
 	CWSundetected = 0,
+	CWSassign,
 	CWSinit,
 	CWSidle,
 	CWSbusy,
@@ -88,7 +98,7 @@ typedef union
 		tCOMWingType type;				//Type of the COM wing connected
 		tCOMWingState state;				//General state of the COM wing
 		void * controlReg;				//Control reg for the specific type of COM wing
-		U8 (*comWingInit)(U8 comWingID);		//Init function
+		void * (*comWingInit)(U8 comWingID);		//Init function
 		U8 (*comWingControl)(U8 comWingID);		//Control function
 		U8 (*comWingEngine)(U8 comWingID);		//Engine function
 	};
