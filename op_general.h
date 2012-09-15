@@ -60,10 +60,8 @@
 // COM wing state
 typedef enum
 {
-	CWSinit = 0,
-	CWSundetected,
-	CWSdetected,
-	CWSassigned,
+	CWSundetected = 0,
+	CWSinit,
 	CWSidle,
 	CWSbusy,
 	CWSerror,
@@ -146,7 +144,41 @@ typedef union
 // ========================== //
 
 // ==== Control Functions ==== //
+/**
+* \fn		U8 comWingIdentify(U8 comWingID, U16 IDData)
+* @brief	Scan and detect present COM Wings
+* @note
+* @arg		U8 comWingID				ID of the wing targeted
+* @return	U8 errorCode				STD Error Code
+*/
+U8 comWingIdentify(U8 comWingID, U16 IDData);
 
+/**
+* \fn		U8 comWingAssign(U8 comWingID)
+* @brief	Assign the correct function according to the type of COM wing
+* @note
+* @arg		U8 comWingID				ID of COM wing to be assigned
+* @return	U8 errorCode				STD Error Code
+*/
+U8 comWingAssign(U8 comWingID);
+
+/**
+* \fn		U8 comWingDetectionEngine(void)
+* @brief	Engine to detect and identify COM Wings
+* @note		This function must be in the infinite loop of the main
+* @arg		nothing
+* @return	U8 errorCode				STD Error Code
+*/
+U8 comWingDetectionEngine(void);
+
+/**
+* \fn		U8 comWingEngine(U8 comWingID)
+* @brief	Engine to operate a COM Wing
+* @note		This function must be in the infinite loop of the main
+* @arg		U8 comWingID				ID of the wings selected
+* @return	U8 errorCode				STD Error Code
+*/
+U8 comWingEngine(U8 comWingID);
 // =========================== //
 // ############################################## //
 

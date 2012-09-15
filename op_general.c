@@ -30,12 +30,16 @@ const tADCInput comIDan[4] = {COM0_ID_AN,COM1_ID_AN,COM2_ID_AN,COM3_ID_AN};
 // ################## Variables ################# //
 extern U32 heapAvailable;
 tCOMWingControl COMWingControl[COM_WING_NB];				//General Control
+
+// -- COM Detection Engine -- //
 U16 comDetectResult[COM_WING_NB][COM_WING_DETECT_RESULT_NB];		//ADC result buffer
 U8 comDetectSoftCntID = SOFT_CNT_MAX;					//ID of the assigned soft Counter
 U8 comDetectSoftCntFlag;						//Flag for the soft Counter
+U8 comDetectADCDoneFlag = ADC_CONV_DONE;				//Flag for the completion of the ADC conversions
 U16 comDetectPeriod = COM_WING_DETECT_PERIOD;				//number of sysTick between presence detection
 U8 comDetectComID = COM_WING_0;						//COM Wing actually being detected
 tFSMState comDetectEngineState = init;					//State of detection engine
+// -------------------------- //
 // ############################################## //
 
 
@@ -53,24 +57,21 @@ tFSMState comDetectEngineState = init;					//State of detection engine
 
 // ############# Control Functions ############## //
 /**
-* \fn		U8 comWingScan(U8 comWingID)
+* \fn		U8 comWingIdentify(U8 comWingID, U16 IDData)
 * @brief	Scan and detect present COM Wings
 * @note
-* @arg		U8 comWingID					ID of the wing targeted
-* @return	U8 errorCode					STD Error Code
+* @arg		U8 comWingID				ID of the wing targeted
+* @return	U8 errorCode				STD Error Code
 */
-U8 comWingScan(U8 comWingID)
+U8 comWingIdentify(U8 comWingID, U16 IDData)
 {
 	tCOMWingType wingType;						//the new type of wing
-	U8 readValue = 0;
 
-	// -- Detect Presence -- //
-	// ADC Read
+	// Format the data correctly
+	IDData >>= 4;
 
-	readValue >>= 4;
-
-	// Type assignation
-	switch (readValue)
+	// -- Type assignation -- //
+	switch (IDData)
 	{
 		case COM_WING_VALUE_NRF: wingType = CWTnrf;		break;
 		case COM_WING_VALUE_RS485: wingType = CWTrs485;		break;
@@ -80,16 +81,17 @@ U8 comWingScan(U8 comWingID)
 		case COM_WING_VALUE_LOL: wingType = CWTlol;		break;
 		default: wingType = CWTunknown;
 	}
-	// --------------------- //
+	// ---------------------- //
 
 	// -- Check for a type change -- //
 	if (wingType != COMWingControl[comWingID].type)
 	{
+		COMWingControl[comWingID].type = wingType;		//Save the type
 		// -- Initialise the wing -- //
-		if (COMWingControl[comWingID].type != CWTunknown)
-		{
-			COMWingControl[comWingID].state = CWSdetected;	//A new wing as been detected
-		}
+		if (COMWingControl[comWingID].type == CWTunknown)
+			COMWingControl[comWingID].state = CWSundetected;//Reset to undetected state
+		else
+			COMWingControl[comWingID].state = CWSinit;	//A new wing as been detected
 		// ------------------------ //
 	}
 	// ----------------------------- //
@@ -98,69 +100,69 @@ U8 comWingScan(U8 comWingID)
 }
 
 /**
-* \fn		U8 nrfInit(void)
-* @brief
+* \fn		U8 comWingAssign(U8 comWingID)
+* @brief	Assign the correct function according to the type of COM wing
 * @note
-* @arg		U8
-* @return	U8 errorCode					STD Error Code
+* @arg		U8 comWingID				ID of COM wing to be assigned
+* @return	U8 errorCode				STD Error Code
 */
 U8 comWingAssign(U8 comWingID)
 {
-	tCOMWingControl * tempCOMWingControlReg = &(COMWingControl[comWingID]);
+	tCOMWingControl * workPtr = &(COMWingControl[comWingID]);
 
-	if (tempCOMWingControlReg->state != CWSundetected)
+	if (workPtr->state != CWSundetected)
 	{
 		// -- Assign ISR and Control -- //
-		switch (tempCOMWingControlReg->type)
+		switch (workPtr->type)
 		{
 			case CWTnrf:
 			{
-				tempCOMWingControlReg->comWingInit = NULL;
-				tempCOMWingControlReg->comWingControl = NULL;
-				tempCOMWingControlReg->comWingEngine = NULL;
+				workPtr->comWingInit = NULL;
+				workPtr->comWingControl = NULL;
+				workPtr->comWingEngine = NULL;
 				break;
 			}
 			case CWTrs485:
 			{
-				tempCOMWingControlReg->comWingInit = &opRS485Init;
-				tempCOMWingControlReg->comWingControl = &opRS485Control;
-				tempCOMWingControlReg->comWingEngine = &opRS485Engine;
+				workPtr->comWingInit = &opRS485Init;
+				workPtr->comWingControl = &opRS485Control;
+				workPtr->comWingEngine = &opRS485Engine;
 				break;
 			}
 			case CWTspi:
 			{
-				tempCOMWingControlReg->comWingInit = NULL;
-				tempCOMWingControlReg->comWingControl = NULL;
-				tempCOMWingControlReg->comWingEngine = NULL;
+				workPtr->comWingInit = NULL;
+				workPtr->comWingControl = NULL;
+				workPtr->comWingEngine = NULL;
 				break;
 			}
 			case CWTbluetooth:
 			{
-				tempCOMWingControlReg->comWingInit = NULL;
-				tempCOMWingControlReg->comWingControl = NULL;
-				tempCOMWingControlReg->comWingEngine = NULL;
+				workPtr->comWingInit = NULL;
+				workPtr->comWingControl = NULL;
+				workPtr->comWingEngine = NULL;
 				break;
 			}
 			case CWTethernet:
 			{
-				tempCOMWingControlReg->comWingInit = NULL;
-				tempCOMWingControlReg->comWingControl = NULL;
-				tempCOMWingControlReg->comWingEngine = NULL;
+				workPtr->comWingInit = NULL;
+				workPtr->comWingControl = NULL;
+				workPtr->comWingEngine = NULL;
 				break;
 			}
 			case CWTlol:
 			{
-				tempCOMWingControlReg->comWingInit = NULL;
-				tempCOMWingControlReg->comWingControl = NULL;
-				tempCOMWingControlReg->comWingEngine = NULL;
+				workPtr->comWingInit = NULL;
+				workPtr->comWingControl = NULL;
+				workPtr->comWingEngine = NULL;
 				break;
 			}
-			default:	tempCOMWingControlReg->state = CWSerror;
+			default:	workPtr->state = CWSerror;
 		}
 		// ---------------------------- //
 
 		// -- Set the State -- //
-		tempCOMWingControlReg->state = CWSassigned;
+		workPtr->state = CWSinit;
 		// ------------------- //
 
 		return STD_EC_SUCCESS;
@@ -169,14 +171,22 @@ U8 comWingAssign(U8 comWingID)
 	return STD_EC_FAIL;
 }
 
-U8 comDetectionEngine(void)
+/**
+* \fn		U8 comWingDetectionEngine(void)
+* @brief	Engine to detect and identify COM Wings
+* @note		This function must be in the infinite loop of the main
+* @arg		nothing
+* @return	U8 errorCode				STD Error Code
+*/
+U8 comWingDetectionEngine(void)
 {
+	U8 wu0;
+	U32 tempResult = 0;
+
 	switch (comDetectEngineState)
 	{
 		case init:
 		{
-			U8 wu0;
-
 			// -- init variables -- //
 			comDetectSoftCntFlag = 0;
 			for (wu0 = 0; wu0 < COM_WING_DETECT_RESULT_NB; wu0++)
@@ -195,21 +205,51 @@ U8 comDetectionEngine(void)
 			softCntStart(comDetectSoftCntID);
 			// ---------------------------- //
 
-			comDetectEngineState = busy;
+			comDetectEngineState = idle;
+			break;
 		}
-		case busy:
+		case idle:
 		{
 			// -- Wait for the flag -- //
 			if (comDetectSoftCntFlag == 0x01)
 			{
 				// -- Convert 10 time the ID pin -- //
-				adcConvert(ADC_1, comIDan[comDetectComID], COM_WING_DETECT_RESULT_NB, &comDetectResult[comDetectComID][0]);
-				comDetectComID++;
+				adcConvert(ADC_1, comIDan[comDetectComID], COM_WING_DETECT_RESULT_NB, &comDetectResult[comDetectComID][0], &comDetectADCDoneFlag);
 				// -------------------------------- //
 
 				comDetectSoftCntFlag = 0;			//Clear the flag
+				comDetectEngineState = busy;
 			}
 			// ----------------------- //
+			break;
+		}
+		case busy:
+		{
+			if (comDetectADCDoneFlag == ADC_CONV_DONE)
+			{
+				// -- Check if the pin is floating -- //
+
+				// ---------------------------------- //
+
+				// -- Round the result -- //
+				for (wu0 = 0; wu0 < COM_WING_DETECT_RESULT_NB; wu0++)
+					tempResult += comDetectResult[comDetectComID][wu0];
+				tempResult /= COM_WING_DETECT_RESULT_NB;
+				// ---------------------- //
+
+				// -- Identify the correct type -- //
+				comWingIdentify(comDetectComID, tempResult);
+				// ------------------------------- //
+
+				// -- Select the next COM Wing -- //
+				comDetectComID++;
+				if (comDetectComID >= COM_WING_NB)
+					comDetectComID = 0;
+				// ------------------------------ //
+
+				comDetectEngineState = idle;			//Wait for the counter to underRun
+			}
+			break;
 		}
 		default: comDetectEngineState = init;	break;
 	}
@@ -217,75 +257,51 @@ U8 comDetectionEngine(void)
 }
 
 /**
-* \fn		U8 nrfInit(void)
-* @brief
-* @note
-* @arg		U8
-* @return	U8 errorCode					STD Error Code
+* \fn		U8 comWingEngine(U8 comWingID)
+* @brief	Engine to operate a COM Wing
+* @note		This function must be in the infinite loop of the main
+* @arg		U8 comWingID				ID of the wings selected
+* @return	U8 errorCode				STD Error Code
 */
 U8 comWingEngine(U8 comWingID)
 {
-	tCOMWingControl * workPtr = &(COMWingControl[comWingID]);
-
-	
+	tCOMWingControl * workPtr = &(COMWingControl[comWingID]);	
 
 	switch (workPtr->state)
 	{
+		//* -- No Wing -- *//
+		case CWSundetected:	workPtr->type = CWTunknown;	break;
+		//* -- Init ----- *//
 		case CWSinit:
 		{
-			// -- init variables -- //
-			workPtr->softCntFlag = 0;
-			workPtr->detectPeriod = COM_WING_DETECT_PERIOD;
-			workPtr->type = CWTunknown;
-			// -------------------- //
+			// -- Assign variables and function -- //
+			comWingAssign(comWingID);
+			// ----------------------------------- //
 
-			// -- init the soft Counter for detection -- //
-			workPtr->softCntID = softCntInit(workPtr->detectPeriod, &(workPtr->softCntFlag), 0x01, SOFT_CNT_RELOAD_EN+SOFT_CNT_TARGET_EN);
-			if (workPtr->softCntID == STD_EC_OVERFLOW)
-				return STD_EC_NOTFOUND;
-			// ----------------------------------------- //
-
-			// -- Start the soft Counter -- //
-			softCntStart(workPtr->softCntID);
-			// ---------------------------- //
-
-			workPtr->state = CWSundetected;
+			workPtr->state = CWSidle;
 			break;
 		}
-		case CWSundetected:
-		{
-
-
-			// Scan for the presence of a wing
-			break;
-		}
-		case CWSdetected:
-		{
-			// Assign the correct function for this type of wing
-			break;
-		}
-		case CWSassigned:
-		{
-			// Initialise the specific control reg
-			break;
-		}
+		//* -- Idle ----- *//
 		case CWSidle:
 		{
 			// Idle action
 
 			break;
 		}
+		//* -- Busy ----- *//
 		case CWSbusy:
 		{
 			// Wait for idle
 			break;
 		}
+		//* -- Error ---- *//
 		case CWSerror:
 		{
 			// Handle error
 			break;
 		}
-		default: COMWingControl[comWingID].state = CWSerror;
+		default: workPtr->state = CWSundetected;
+		//* ------------- *//
 	}
 
 	return STD_EC_SUCCESS;
