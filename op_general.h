@@ -27,6 +27,7 @@
 #include <peripheral/pic32_spi.h>
 #include <peripheral/pic32_uart.h>
 #include <peripheral/pic32_timer.h>
+#include <peripheral/pic32_interrupt.h>
 
 // Definition
 #include <definition/datatype_megaxone.h>
@@ -38,11 +39,13 @@
 
 
 // ################## Defines ################### //
+#define OPIUM_SYSTICK_VALUE		1000			//Value of a sysTick (in µs) for the Real-Time system
+
 // COM wings
-#define COM_WING_0	0
-#define COM_WING_1	1
-#define COM_WING_2	2
-#define COM_WING_3	3
+#define COM_WING_0			0
+#define COM_WING_1			1
+#define COM_WING_2			2
+#define COM_WING_3			3
 
 // COM wings ID value	(ADC value >>4)
 #define COM_WING_VALUE_NRF		0x05

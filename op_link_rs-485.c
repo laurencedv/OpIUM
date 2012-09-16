@@ -17,8 +17,10 @@
 
 // ################## Variables ################# //
 extern U32 heapAvailable;
-extern U8 comTimerID[];
-extern U8 comUartID[];
+extern U8 COM_TIMER_ID[];
+extern U8 COM_UART_ID[];
+extern tIntIRQ COM_TIMER_INT[];
+extern tIntIRQ COM_UART_INT[];
 
 // ==== Control ==== //
 tOpRS485Control * opRS485ControlReg[COM_WING_NB];
@@ -53,8 +55,8 @@ tOpRS485Control * opRS485Init(U8 comWingID)
 			heapAvailable -= sizeof(tOpRS485Slot);
 
 			// -- Assign Hardware -- //
-			tempOpRS485ControlReg->timerID = comTimerID[comWingID];									// TODO
-			tempOpRS485ControlReg->uartID = comUartID[comWingID];
+			tempOpRS485ControlReg->timerID = COM_TIMER_ID[comWingID];									// TODO
+			tempOpRS485ControlReg->uartID = COM_UART_ID[comWingID];
 			// --------------------- //
 
 			// -- Initialise Control -- //
@@ -85,6 +87,13 @@ tOpRS485Control * opRS485Init(U8 comWingID)
 		if (timerInit(tempOpRS485ControlReg->timerID,TMR_CS_PBCLK|TMR_16BIT|TMR_DIV_1) != STD_EC_SUCCESS)
 			Nop();							// TODO report the error
 		// ------------------- //
+
+		// -- Init the interrupts -- //
+		intSetPriority(COM_TIMER_INT[comWingID],5,0);
+		intSetPriority(COM_UART_INT[comWingID],5,3);
+		intInit(COM_TIMER_INT[comWingID]);
+		intInit(COM_UART_INT[comWingID]);
+		// ------------------------- //
 	}
 	// ---------------------- //
 
@@ -129,6 +138,58 @@ U8 opRS485Control(U8 comWingID)
 U8 opRS485Engine(U8 comWingID)
 {
 
+}
+
+/**
+* \fn		void opRS485SetTerm(U8 comWingID, U8 termState)
+* @brief	Set the state of the RS-485 120? terminator
+* @note
+* @arg		U8 comWingID					ID of the selected COM Wing
+* @arg		U8 termState					State of the terminator
+* @return	nothing
+*/
+void opRS485SetTerm(U8 comWingID, U8 termState)
+{
+
+}
+
+/**
+* \fn		U8 opRS485GetTerm(U8 comWingID)
+* @brief	Return the actual state of the RS-485 120? terminator
+* @note
+* @arg		U8 comWingID					ID of the selected COM Wing
+* @return	U8 termState					State of the terminator
+*/
+U8 opRS485GetTerm(U8 comWingID)
+{
+
+	return 0;
+}
+
+/**
+* \fn		void opRS485SetStatusLed(U8 comWingID, U8 ledState)
+* @brief	Set the state of the Status LED
+* @note
+* @arg		U8 comWingID					ID of the selected COM Wing
+* @arg		U8 ledState					State of the LED
+* @return	nothing
+*/
+void opRS485SetStatusLed(U8 comWingID, U8 ledState)
+{
+
+}
+
+/**
+* \fn		U8 opRS485GetStatusLed(U8 comWingID)
+* @brief	Return the actual state of the Status LED
+* @note
+* @arg		U8 comWingID					ID of the selected COM Wing
+* @return	U8 ledState					State of the LED
+*/
+U8 opRS485GetStatusLed(U8 comWingID)
+{
+
+	return 0;
 }
 // ############################################## //
 

@@ -16,25 +16,69 @@
 
 
 // ################## Defines ################### //
-//COM Wing ID AN address
+// == COM Wings Access == //
 #if COM_WING_NB == 1
+//Peripheral HW Port
 const tADCInput comIDan[1] = {COM0_ID_AN};
 const U8 comTimerID[1] = {COM0_TIMER_ID};
 const U8 comUartID[1] = {COM0_UART_ID};
 const U8 comSPIID[1] = {COM0_SPI_ID};
 
+//Interrupt IRQ
+const tIntIRQ COM_TIMER_INT[1] = {COM0_TIMER_INT_IRQ};
+const tIntIRQ COM_UART_INT[1] = {COM0_UART_INT_IRQ};
+const tIntIRQ COM_SPI_INT[1] = {COM0_SPI_INT_IRQ};
+const tIntIRQ COM_IRQ0_INT[1] = {COM0_IRQ0_INT_IRQ};
+const tIntIRQ COM_IRQ1_INT[1] = {COM0_IRQ1_INT_IRQ};
+
 #elif COM_WING_NB == 2
-const tADCInput comIDan[2] = {COM0_ID_AN,COM1_ID_AN};
-const U8 comTimerID[2] = {COM0_TIMER_ID,COM1_TIMER_ID};
-const U8 comUartID[2] = {COM0_UART_ID,COM1_UART_ID};
-const U8 comSPIID[2] = {COM0_SPI_ID,COM1_SPI_ID};
+//Peripheral HW Port
+const tADCInput COM_ID_AN[2] = {COM0_ID_AN,COM1_ID_AN};
+const U8 COM_TIMER_ID[2] = {COM0_TIMER_ID,COM1_TIMER_ID};
+const U8 COM_UART_ID[2] = {COM0_UART_ID,COM1_UART_ID};
+const U8 COM_SPI_ID[2] = {COM0_SPI_ID,COM1_SPI_ID};
+
+//Interrupt IRQ
+const tIntIRQ COM_TIMER_INT[2] = {COM0_TIMER_INT_IRQ,COM1_TIMER_INT_IRQ};
+const tIntIRQ COM_UART_INT[2] = {COM0_UART_INT_IRQ,COM1_UART_INT_IRQ};
+const tIntIRQ COM_SPI_INT[2] = {COM0_SPI_INT_IRQ,COM1_SPI_INT_IRQ};
+const tIntIRQ COM_IRQ0_INT[2] = {COM0_IRQ0_INT_IRQ,COM1_IRQ0_INT_IRQ};
+const tIntIRQ COM_IRQ1_INT[2] = {COM0_IRQ1_INT_IRQ,COM1_IRQ1_INT_IRQ};
 
 #elif COM_WING_NB == 4
+//Peripheral HW Port
 const tADCInput comIDan[4] = {COM0_ID_AN,COM1_ID_AN,COM2_ID_AN,COM3_ID_AN};
 const U8 comTimerID[4] = {COM0_TIMER_ID,COM1_TIMER_ID,COM2_TIMER_ID,COM3_TIMER_ID};
 const U8 comUartID[4] = {COM0_UART_ID,COM1_UART_ID,COM2_UART_ID,COM3_UART_ID};
 const U8 comSPIID[4] = {COM0_SPI_ID,COM1_SPI_ID,COM2_SPI_ID,COM3_SPI_ID};
+
+//Interrupt IRQ
+const tIntIRQ COM_TIMER_INT[4] = {COM0_TIMER_INT_IRQ,COM1_TIMER_INT_IRQ,COM2_TIMER_INT_IRQ,COM3_TIMER_INT_IRQ};
+const tIntIRQ COM_UART_INT[4] = {COM0_UART_INT_IRQ,COM1_UART_INT_IRQ,COM2_UART_INT_IRQ,COM3_UART_INT_IRQ};
+const tIntIRQ COM_SPI_INT[4] = {COM0_SPI_INT_IRQ,COM1_SPI_INT_IRQ,COM2_SPI_INT_IRQ,COM3_SPI_INT_IRQ};
+const tIntIRQ COM_IRQ0_INT[4] = {COM0_IRQ0_INT_IRQ,COM1_IRQ0_INT_IRQ,COM2_IRQ0_INT_IRQ,COM3_IRQ0_INT_IRQ};
+const tIntIRQ COM_IRQ1_INT[4] = {COM0_IRQ1_INT_IRQ,COM1_IRQ1_INT_IRQ,COM2_IRQ1_INT_IRQ,COM3_IRQ1_INT_IRQ};
 #endif
+// ====================== //
+
+
+// == EXT Wings Access == //
+#if EXT_WING_NB == 1
+//Peripheral HW Port
+const U8 EXT_UART_ID[1] = {EXT0_UART_ID};
+
+//Interrupt IRQ
+const tIntIRQ EXT_UART_INT[1] = {EXT0_UART_INT_IRQ};
+const tIntIRQ EXT_IRQ_INT[1] = {EXT0_IRQ_INT_IRQ};
+#elif EXT_WING_NB == 2
+//Peripheral HW Port
+const U8 EXT_UART_ID[2] = {EXT0_UART_ID,EXT1_UART_ID};
+
+//Interrupt IRQ
+const tIntIRQ EXT_UART_INT[2] = {EXT0_UART_INT_IRQ,EXT1_UART_INT_IRQ};
+const tIntIRQ EXT_IRQ_INT[2] = {EXT0_IRQ_INT_IRQ,EXT1_IRQ_INT_IRQ};
+#endif
+// ====================== //
 // ############################################## //
 
 
@@ -225,7 +269,7 @@ U8 comWingDetectionEngine(void)
 			if (comDetectSoftCntFlag == 0x01)
 			{
 				// -- Convert 10 time the ID pin -- //
-				adcConvert(ADC_1, comIDan[comDetectComID], COM_WING_DETECT_RESULT_NB, &comDetectResult[comDetectComID][0], &comDetectADCDoneFlag);
+				adcConvert(ADC_1, COM_ID_AN[comDetectComID], COM_WING_DETECT_RESULT_NB, &comDetectResult[comDetectComID][0], &comDetectADCDoneFlag);
 				// -------------------------------- //
 
 				comDetectSoftCntFlag = 0;			//Clear the flag
@@ -305,7 +349,8 @@ U8 comWingEngine(U8 comWingID)
 		//* -- Idle ----- *//
 		case CWSidle:
 		{
-			// Idle action
+			// Engine of the Wings
+			workPtr->comWingEngine(comWingID);
 
 			break;
 		}
