@@ -37,6 +37,7 @@ tOpRS485Control * opRS485ControlReg[COM_WING_NB];
 tOpRS485Control * opRS485Init(U8 comWingID)
 {
 	tOpRS485Control * tempOpRS485ControlReg;
+
 	// -- Allocate Control -- //
 	tempOpRS485ControlReg = (tOpRS485Control*)malloc(sizeof(tOpRS485Control));
 	if (tempOpRS485ControlReg != NULL)
@@ -55,15 +56,6 @@ tOpRS485Control * opRS485Init(U8 comWingID)
 			tempOpRS485ControlReg->timerID = comTimerID[comWingID];									// TODO
 			tempOpRS485ControlReg->uartID = comUartID[comWingID];
 			// --------------------- //
-
-			// -- Init Hardware -- //
-			if (uartInit(tempOpRS485ControlReg->uartID,UART_TX_INT_TSR_EMPTY|UART_RX_INT_DATA_READY|UART_MODE_8N1) != STD_EC_SUCCESS)
-				break;
-			if (uartSetBaudRate(tempOpRS485ControlReg->uartID, COM_UART_LOW_SPEED) != STD_EC_SUCCESS)
-				break;
-			if (timerInit(tempOpRS485ControlReg->timerID,TMR_CS_PBCLK|TMR_16BIT|TMR_DIV_1) != STD_EC_SUCCESS)
-				break;
-			// ------------------- //
 
 			// -- Initialise Control -- //
 			tempOpRS485ControlReg->currentFrame = 0;
@@ -84,6 +76,15 @@ tOpRS485Control * opRS485Init(U8 comWingID)
 			// -------------------------- //
 		}
 		// ------------------------------- //
+
+		// -- Init Hardware -- //
+		if (uartInit(tempOpRS485ControlReg->uartID,UART_TX_INT_TSR_EMPTY|UART_RX_INT_DATA_READY|UART_MODE_8N1) != STD_EC_SUCCESS)
+			Nop();							// TODO report the error
+		if (uartSetBaudRate(tempOpRS485ControlReg->uartID, COM_UART_LOW_SPEED) != STD_EC_SUCCESS)
+			Nop();							// TODO report the error
+		if (timerInit(tempOpRS485ControlReg->timerID,TMR_CS_PBCLK|TMR_16BIT|TMR_DIV_1) != STD_EC_SUCCESS)
+			Nop();							// TODO report the error
+		// ------------------- //
 	}
 	// ---------------------- //
 

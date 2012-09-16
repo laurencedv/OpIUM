@@ -22,11 +22,13 @@ const tADCInput comIDan[1] = {COM0_ID_AN};
 const U8 comTimerID[1] = {COM0_TIMER_ID};
 const U8 comUartID[1] = {COM0_UART_ID};
 const U8 comSPIID[1] = {COM0_SPI_ID};
+
 #elif COM_WING_NB == 2
 const tADCInput comIDan[2] = {COM0_ID_AN,COM1_ID_AN};
 const U8 comTimerID[2] = {COM0_TIMER_ID,COM1_TIMER_ID};
 const U8 comUartID[2] = {COM0_UART_ID,COM1_UART_ID};
 const U8 comSPIID[2] = {COM0_SPI_ID,COM1_SPI_ID};
+
 #elif COM_WING_NB == 4
 const tADCInput comIDan[4] = {COM0_ID_AN,COM1_ID_AN,COM2_ID_AN,COM3_ID_AN};
 const U8 comTimerID[4] = {COM0_TIMER_ID,COM1_TIMER_ID,COM2_TIMER_ID,COM3_TIMER_ID};

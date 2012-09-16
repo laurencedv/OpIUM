@@ -24,6 +24,9 @@
 // Lib
 #include <soft/pic32_realtime.h>
 #include <peripheral/pic32_adc.h>
+#include <peripheral/pic32_spi.h>
+#include <peripheral/pic32_uart.h>
+#include <peripheral/pic32_timer.h>
 
 // Definition
 #include <definition/datatype_megaxone.h>
