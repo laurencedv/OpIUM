@@ -89,7 +89,7 @@ tCOMWingControl COMWingControl[COM_WING_NB];				//General Control
 // -- COM Detection Engine -- //
 U16 comDetectResult[COM_WING_NB][COM_WING_DETECT_RESULT_NB];		//ADC result buffer
 U8 comDetectSoftCntID = SOFT_CNT_MAX;					//ID of the assigned soft Counter
-U8 comDetectSoftCntFlag;						//Flag for the soft Counter
+U32 comDetectSoftCntFlag;						//Flag for the soft Counter
 U8 comDetectADCDoneFlag = ADC_CONV_DONE;				//Flag for the completion of the ADC conversions
 U16 comDetectPeriod = COM_WING_DETECT_PERIOD;				//number of sysTick between presence detection
 U8 comDetectComID = COM_WING_0;						//COM Wing actually being detected
@@ -173,6 +173,7 @@ U8 comWingAssign(U8 comWingID)
 			case CWTnrf:
 			{
 				workPtr->comWingInit = NULL;
+				workPtr->comWingDestroy = NULL;
 				workPtr->comWingControl = NULL;
 				workPtr->comWingEngine = NULL;
 				break;
@@ -180,6 +181,7 @@ U8 comWingAssign(U8 comWingID)
 			case CWTrs485:
 			{
 				workPtr->comWingInit = &opRS485Init;
+				workPtr->comWingDestroy = &opRS485Destroy;
 				workPtr->comWingControl = &opRS485Control;
 				workPtr->comWingEngine = &opRS485Engine;
 				break;
@@ -187,6 +189,7 @@ U8 comWingAssign(U8 comWingID)
 			case CWTspi:
 			{
 				workPtr->comWingInit = NULL;
+				workPtr->comWingDestroy = NULL;
 				workPtr->comWingControl = NULL;
 				workPtr->comWingEngine = NULL;
 				break;
@@ -194,6 +197,7 @@ U8 comWingAssign(U8 comWingID)
 			case CWTbluetooth:
 			{
 				workPtr->comWingInit = NULL;
+				workPtr->comWingDestroy = NULL;
 				workPtr->comWingControl = NULL;
 				workPtr->comWingEngine = NULL;
 				break;
@@ -201,6 +205,7 @@ U8 comWingAssign(U8 comWingID)
 			case CWTethernet:
 			{
 				workPtr->comWingInit = NULL;
+				workPtr->comWingDestroy = NULL;
 				workPtr->comWingControl = NULL;
 				workPtr->comWingEngine = NULL;
 				break;
@@ -208,6 +213,7 @@ U8 comWingAssign(U8 comWingID)
 			case CWTlol:
 			{
 				workPtr->comWingInit = NULL;
+				workPtr->comWingDestroy = NULL;
 				workPtr->comWingControl = NULL;
 				workPtr->comWingEngine = NULL;
 				break;
@@ -215,14 +221,8 @@ U8 comWingAssign(U8 comWingID)
 			default:	workPtr->state = CWSerror;
 		}
 		// ---------------------------- //
-
-		// -- Set the State -- //
-		workPtr->state = CWSinit;
-		// ------------------- //
-
 		return STD_EC_SUCCESS;
 	}
-
 	return STD_EC_FAIL;
 }
 

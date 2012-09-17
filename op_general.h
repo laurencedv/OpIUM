@@ -105,6 +105,7 @@ typedef union
 		tCOMWingState state;				//General state of the COM wing
 		void * controlReg;				//Control reg for the specific type of COM wing
 		void * (*comWingInit)(U8 comWingID);		//Init function
+		void * (*comWingDestroy)(U8 comWingID);		//Destroy function
 		U8 (*comWingControl)(U8 comWingID);		//Control function
 		U8 (*comWingEngine)(U8 comWingID);		//Engine function
 	};

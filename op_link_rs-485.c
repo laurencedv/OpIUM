@@ -22,8 +22,10 @@ extern U8 COM_UART_ID[];
 extern tIntIRQ COM_TIMER_INT[];
 extern tIntIRQ COM_UART_INT[];
 
+U8 flagTest[2] = {1,1};
+
 // ==== Control ==== //
-tOpRS485Control * opRS485ControlReg[COM_WING_NB];
+tOpRS485Control * opRS485ControlReg[COM_WING_NB] = {NULL};
 // ================= //
 // ############################################## //
 
@@ -73,11 +75,19 @@ tOpRS485Control * opRS485Init(U8 comWingID)
 		else
 		{
 			// -- Something went Wrong -- //
-			opRS485Destroy(tempOpRS485ControlReg);			//Destroy the control Reg
+			//opRS485Destroy(tempOpRS485ControlReg);			//Destroy the control Reg
 			tempOpRS485ControlReg = NULL;				//Output a NULL pointer
 			// -------------------------- //
 		}
 		// ------------------------------- //
+
+		// -- Init the IO -- //
+		// TODO set all the IO
+		// ----------------- //
+
+		// -- Display the status -- //
+		opRS485SetStatusLed(comWingID, OP_RS485_LED_STAT_BLINK_FAST);	//Status LED will flash rapidly to indicate when are searching for a network
+		// ------------------------ //
 
 		// -- Init Hardware -- //
 		if (uartInit(tempOpRS485ControlReg->uartID,UART_TX_INT_TSR_EMPTY|UART_RX_INT_DATA_READY|UART_MODE_8N1) != STD_EC_SUCCESS)
@@ -102,13 +112,31 @@ tOpRS485Control * opRS485Init(U8 comWingID)
 
 /**
 * \fn		U8 opRS485Destroy(tOpRS485Control * controlToDestroy)
-* @brief	Destroy all memory associated with a RS-485 COM Wing
+* @brief	Deallocated and stop everything related to a RS-485 COM Wing
 * @note		This can fail! Try-and-Pray!
-* @arg		tOpRS485Control * controlToDestroy		Pointer to the control reg to be destroyed
+* @arg		U8 comWingID					ID of the selected COM Wing
 * @return	nothing
 */
-void opRS485Destroy(tOpRS485Control * controlToDestroy)
+void opRS485Destroy(U8 comWingID)
 {
+	tOpRS485Control * controlToDestroy = opRS485ControlReg[comWingID];
+
+	// -- Disable interrupts -- //
+	intSetState(COM_TIMER_INT[comWingID],DISABLE);
+	intSetState(COM_UART_INT[comWingID],DISABLE);
+	// ------------------------ //
+
+	// -- Stop Hardware -- //
+	softCntRelease(controlToDestroy->statusLedSoftCntID);
+	timerStop(controlToDestroy->timerID);
+	// TODO uartStop()	when it will exist...
+	// ------------------- //
+
+	// -- Reset IO -- //
+	opRS485SetStatusLed(comWingID, OP_RS485_LED_STAT_OFF);
+	// TODO reset all the other IO
+	// -------------- //
+
 	// -- Destroy all memory allocated -- //
 	free(controlToDestroy->slotControl) ;
 	free(controlToDestroy);
@@ -137,33 +165,50 @@ U8 opRS485Control(U8 comWingID)
 */
 U8 opRS485Engine(U8 comWingID)
 {
-
+	if (flagTest[comWingID] == 1)
+	{
+		
+		flagTest[comWingID] = 0;
+	}
 }
 
 /**
 * \fn		void opRS485SetTerm(U8 comWingID, U8 termState)
 * @brief	Set the state of the RS-485 120? terminator
-* @note
+* @note		Use ENABLE of DISABLE for $state
 * @arg		U8 comWingID					ID of the selected COM Wing
 * @arg		U8 termState					State of the terminator
 * @return	nothing
 */
 void opRS485SetTerm(U8 comWingID, U8 termState)
 {
-
+	switch (comWingID)
+	{
+	#if COM_WING_NB >= 1
+		case COM_WING_0: termState == 1 ? setPIN(COM0_IO0) : clearPIN(COM0_IO0);	break;
+	#if COM_WING_NB >= 2
+		case COM_WING_1: termState == 1 ? setPIN(COM1_IO0) : clearPIN(COM1_IO0);	break;
+	#if COM_WING_NB == 4
+		case COM_WING_2: termState == 1 ? setPIN(COM2_IO0) : clearPIN(COM2_IO0);	break;
+		case COM_WING_3: termState == 1 ? setPIN(COM3_IO0) : clearPIN(COM3_IO0);	break;
+	#endif
+	#endif
+	#endif
+		default:	break;
+	}
 }
 
 /**
 * \fn		U8 opRS485GetTerm(U8 comWingID)
 * @brief	Return the actual state of the RS-485 120? terminator
-* @note
+* @note		The state is return as ENABLE of DISABLE
 * @arg		U8 comWingID					ID of the selected COM Wing
 * @return	U8 termState					State of the terminator
 */
 U8 opRS485GetTerm(U8 comWingID)
 {
 
-	return 0;
+	return opRS485ControlReg[comWingID]->terminatorState;
 }
 
 /**
@@ -176,7 +221,45 @@ U8 opRS485GetTerm(U8 comWingID)
 */
 void opRS485SetStatusLed(U8 comWingID, U8 ledState)
 {
+	if (opRS485ControlReg[comWingID] != NULL)
+	{
+		U32 * ledPtr;
+		U32 ledMask;
+		U16 blinkPeriod;
 
+		// -- Point to the correct reg -- //
+		switch (comWingID)
+		{
+		#if COM_WING_NB >= 1
+			case COM_WING_0: ledPtr = &getInvRegPin(COM0_IO2); ledMask = COM0_IO2;	break;
+		#if COM_WING_NB >= 2
+			case COM_WING_1: ledPtr = &getInvRegPin(COM1_IO2); ledMask = COM1_IO2;	break;
+		#if COM_WING_NB == 4
+			case COM_WING_2: ledPtr = &getInvRegPin(COM2_IO2); ledMask = COM2_IO2;	break;
+			case COM_WING_3: ledPtr = &getInvRegPin(COM3_IO2); ledMask = COM3_IO2;	break;
+		#endif
+		#endif
+		#endif
+			default:	break;
+		}
+		// ------------------------------ //
+
+		// -- Save the state -- //
+		opRS485ControlReg[comWingID]->statusLedState = ledState;
+		// -------------------- //
+
+		// -- Start a soft Cnt -- //
+		switch (ledState)
+		{
+			case OP_RS485_LED_STAT_BLINK:		blinkPeriod = 250;	break;
+			case OP_RS485_LED_STAT_BLINK_SLOW:	blinkPeriod = 500;	break;
+			case OP_RS485_LED_STAT_BLINK_FAST:	blinkPeriod = 100;	break;
+			default:	ledPtr[-2+ledState] = ledMask;		return;
+		}
+		opRS485ControlReg[comWingID]->statusLedSoftCntID = softCntInit(blinkPeriod, ledPtr, ledMask,SOFT_CNT_RELOAD_EN+SOFT_CNT_TARGET_EN);
+		softCntStart(opRS485ControlReg[comWingID]->statusLedSoftCntID);
+		// ---------------------- //
+	}
 }
 
 /**
@@ -188,8 +271,7 @@ void opRS485SetStatusLed(U8 comWingID, U8 ledState)
 */
 U8 opRS485GetStatusLed(U8 comWingID)
 {
-
-	return 0;
+	return opRS485ControlReg[comWingID]->statusLedState;
 }
 // ############################################## //
 
