@@ -98,15 +98,43 @@ tFSMState comDetectEngineState = init;					//State of detection engine
 // ############################################## //
 
 
-// ############# Functions Pointers ############# //
+// ############### Board Functions ############## //
 /**
-* \fn		void comWingControl[COM_WING_NB](void)
-* @brief	Control function pointer for each of the COM wing
-* @note
-* @arg		void
-* @return	U8 errorCode					STD Error Code
+* \fn		void opInitStatusLed(void)
+* @brief	Start the necessary pheripheral to use the Status LED on the node Board
+* @note		The PWM module use the Timer 2 without interrupt
+* @arg		nothing
+* @return	nothing
 */
-//void (*comWingControlPtr)[COM_WING_NB] (void);
+void opInitStatusLed(void)
+{
+	timerInit(TIMER_2,0);
+	ocSetConfig(LED_R_OC_ID,OC_MODE_PWM|OC_TIMER_2);
+	ocSetConfig(LED_G_OC_ID,OC_MODE_PWM|OC_TIMER_2);
+	ocSetConfig(LED_B_OC_ID,OC_MODE_PWM|OC_TIMER_2);
+	pwmSetPeriod(LED_R_OC_ID,1000);
+	pwmSetPeriod(LED_G_OC_ID,1000);
+	pwmSetPeriod(LED_B_OC_ID,1000);
+	ocStart(LED_R_OC_ID);
+	ocStart(LED_G_OC_ID);
+	ocStart(LED_B_OC_ID);
+}
+
+/**
+* \fn		void opSetStatusLed(U8 red, U8 green, U8 blue)
+* @brief	Set the color of the Status LED
+* @note		The colors value are set between 0 and 0xFF
+* @arg		U8 red					Intensity value of the red
+* @arg		U8 green				Intensity value of the green
+* @arg		U8 blue					Intensity value of the blue
+* @return	nothing
+*/
+void opSetStatusLed(U8 red, U8 green, U8 blue)
+{
+	pwmSetDuty(LED_R_OC_ID, red, 0xFF);
+	pwmSetDuty(LED_G_OC_ID, green, 0xFF);
+	pwmSetDuty(LED_B_OC_ID, blue, 0xFF);
+}
 // ############################################## //
 
 
@@ -141,12 +169,13 @@ U8 comWingIdentify(U8 comWingID, U16 IDData)
 	// -- Check for a type change -- //
 	if (wingType != COMWingControl[comWingID].type)
 	{
-		COMWingControl[comWingID].type = wingType;		//Save the type
+		COMWingControl[comWingID].newType = wingType;		//Save the new type
+
 		// -- Initialise the wing -- //
 		if (COMWingControl[comWingID].type == CWTunknown)
-			COMWingControl[comWingID].state = CWSundetected;//Reset to undetected state
-		else
 			COMWingControl[comWingID].state = CWSassign;	//A new wing as been detected
+		else
+			COMWingControl[comWingID].state = CWSdisconnect;//The wing has changed, disconnect it
 		// ------------------------ //
 	}
 	// ----------------------------- //
@@ -324,9 +353,9 @@ U8 comWingEngine(U8 comWingID)
 
 	switch (workPtr->state)
 	{
-		//* -- No Wing -- *//
+		//* -- No Wing ----- *//
 		case CWSundetected:	workPtr->type = CWTunknown;	break;
-		//* -- Assign --- *//
+		//* -- Assign ------ *//
 		case CWSassign:
 		{
 			// -- Assign variables and function -- //
@@ -336,7 +365,7 @@ U8 comWingEngine(U8 comWingID)
 			workPtr->state = CWSinit;
 			break;
 		}
-		//* -- Init ----- *//
+		//* -- Init -------- *//
 		case CWSinit:
 		{
 			// -- Init and save the control Reg -- //
@@ -346,7 +375,7 @@ U8 comWingEngine(U8 comWingID)
 			workPtr->state = CWSidle;
 			break;
 		}
-		//* -- Idle ----- *//
+		//* -- Idle -------- *//
 		case CWSidle:
 		{
 			// Engine of the Wings
@@ -354,20 +383,40 @@ U8 comWingEngine(U8 comWingID)
 
 			break;
 		}
-		//* -- Busy ----- *//
+		//* -- Busy -------- *//
 		case CWSbusy:
 		{
 			// Wait for idle
 			break;
 		}
-		//* -- Error ---- *//
+		//* -- Error ------- *//
 		case CWSerror:
 		{
 			// Handle error
+			// If a COM wing is disconned will get here! handle it!
+
+			if (COMWingControl[comWingID].type == CWTunknown)
+				workPtr->state = CWSundetected;
+
+			break;
+		}
+		//* -- Disconnect -- *//
+		case CWSdisconnect:
+		{
+			// -- Destroy the specific type -- //
+			workPtr->comWingDestroy(comWingID);
+			// ------------------------------- //
+
+			// -- Assign the new type -- //
+			COMWingControl[comWingID].type = COMWingControl[comWingID].newType;
+			// ------------------------- //
+
+			workPtr->state = CWSassign;
+
 			break;
 		}
 		default: workPtr->state = CWSundetected;
-		//* ------------- *//
+		//* ---------------- *//
 	}
 
 	return STD_EC_SUCCESS;

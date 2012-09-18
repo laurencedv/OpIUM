@@ -113,12 +113,12 @@ tOpRS485Control * opRS485Init(U8 comWingID);
 
 /**
 * \fn		U8 opRS485Destroy(tOpRS485Control * controlToDestroy)
-* @brief	Destroy all memory associated with a RS-485 COM Wing
+* @brief	Deallocated and stop everything related to a RS-485 COM Wing
 * @note		This can fail! Try-and-Pray!
-* @arg		tOpRS485Control * controlToDestroy		Pointer to the control reg to be destroyed
+* @arg		U8 comWingID					ID of the selected COM Wing
 * @return	nothing
 */
-void opRS485Destroy(tOpRS485Control * controlToDestroy);
+void opRS485Destroy(U8 comWingID);
 
 /**
 * \fn		U8 opRS485Control (U8 comWingID)

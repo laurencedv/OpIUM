@@ -27,6 +27,7 @@
 #include <peripheral/pic32_spi.h>
 #include <peripheral/pic32_uart.h>
 #include <peripheral/pic32_timer.h>
+#include <peripheral/pic32_output_compare.h>
 #include <peripheral/pic32_interrupt.h>
 
 // Definition
@@ -81,6 +82,7 @@ typedef enum
 	CWSidle,
 	CWSbusy,
 	CWSerror,
+	CWSdisconnect
 }tCOMWingState;
 
 // COM wing type
@@ -102,6 +104,7 @@ typedef union
 	struct
 	{
 		tCOMWingType type;				//Type of the COM wing connected
+		tCOMWingType newType;				//Type of the COM wing newly detected
 		tCOMWingState state;				//General state of the COM wing
 		void * controlReg;				//Control reg for the specific type of COM wing
 		void * (*comWingInit)(U8 comWingID);		//Init function
@@ -156,9 +159,31 @@ typedef union
 
 
 // ################# Prototypes ################# //
-// ==== Buffer Functions ==== //
+// ==== Buffer Functions ===== //
 
-// ========================== //
+// =========================== //
+
+// ==== Board Functions ====== //
+/**
+* \fn		void opInitStatusLed(void)
+* @brief	Start the necessary pheripheral to use the Status LED on the node Board
+* @note		The PWM module use the Timer 2 without interrupt
+* @arg		nothing
+* @return	nothing
+*/
+void opInitStatusLed(void);
+
+/**
+* \fn		void opSetStatusLed(U8 red, U8 green, U8 blue)
+* @brief	Set the color of the Status LED
+* @note		The colors value are set between 0 and 0xFF
+* @arg		U8 red					Intensity value of the red
+* @arg		U8 green				Intensity value of the green
+* @arg		U8 blue					Intensity value of the blue
+* @return	nothing
+*/
+void opSetStatusLed(U8 red, U8 green, U8 blue);
+// =========================== //
 
 // ==== Control Functions ==== //
 /**

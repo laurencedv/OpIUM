@@ -153,7 +153,7 @@ void opRS485Destroy(U8 comWingID)
 */
 U8 opRS485Control(U8 comWingID)
 {
-
+	return STD_EC_SUCCESS;
 }
 
 /**
@@ -170,6 +170,7 @@ U8 opRS485Engine(U8 comWingID)
 		
 		flagTest[comWingID] = 0;
 	}
+	return STD_EC_SUCCESS;
 }
 
 /**
@@ -231,9 +232,9 @@ void opRS485SetStatusLed(U8 comWingID, U8 ledState)
 		switch (comWingID)
 		{
 		#if COM_WING_NB >= 1
-			case COM_WING_0: ledPtr = &getInvRegPin(COM0_IO2); ledMask = COM0_IO2;	break;
+			case COM_WING_0: ledPtr = (U32*)&getInvRegPin(COM0_IO2); ledMask = COM0_IO2;	break;
 		#if COM_WING_NB >= 2
-			case COM_WING_1: ledPtr = &getInvRegPin(COM1_IO2); ledMask = COM1_IO2;	break;
+			case COM_WING_1: ledPtr = (U32*)&getInvRegPin(COM1_IO2); ledMask = COM1_IO2;	break;
 		#if COM_WING_NB == 4
 			case COM_WING_2: ledPtr = &getInvRegPin(COM2_IO2); ledMask = COM2_IO2;	break;
 			case COM_WING_3: ledPtr = &getInvRegPin(COM3_IO2); ledMask = COM3_IO2;	break;
