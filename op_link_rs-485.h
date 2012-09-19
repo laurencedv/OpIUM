@@ -34,10 +34,9 @@
 
 
 // ################## Defines ################### //
-// Pin macro
-#define OP_RS485_PIN_TERM		_IO0
-#define OP_RS485_PIN_DIR		_IO1
-#define OP_RS485_PIN_LED_STAT		_IO2
+// Data Direction
+#define OP_RS485_DIR_TX			1
+#define OP_RS485_DIR_RX			0
 
 // Status LED
 #define OP_RS485_LED_STAT_OFF		0
@@ -45,6 +44,9 @@
 #define OP_RS485_LED_STAT_BLINK		0x2
 #define OP_RS485_LED_STAT_BLINK_SLOW	0x3
 #define OP_RS485_LED_STAT_BLINK_FAST	0x4
+
+// Timing
+#define OP_RS485_TIME_WAIT_INIT		300000			//Time to wait a sync slot at init
 // ############################################## //
 
 
@@ -52,10 +54,10 @@
 // Link State
 typedef enum
 {
-	detect = 0,
-	election,
-	master,
-	slave
+	RSSdetect = 0,
+	RSSelection,
+	RSSmaster,
+	RSSslave
 }tOpRS485LinkState;
 
 // Link SubState
@@ -80,7 +82,7 @@ typedef union
 // Control
 typedef union
 {
-	U32 all[4];
+	U32 all[5];
 	struct
 	{
 		tOpRS485LinkState linkState;
@@ -95,8 +97,22 @@ typedef union
 		U8 statusLedState;
 		U8 statusLedSoftCntID;
 		U8 terminatorState;
+		U8 dataDirection;
+		U8 rsAddress;
 	};
 }tOpRS485Control;
+
+// RS-485 Packet Header
+typedef union
+{
+	U32 all;
+	struct
+	{
+		U8 delimiter;
+		U8 byteNb;
+		U8 destination;
+	};
+}tOpRS485PacketHeader;
 // ############################################## //
 
 
@@ -127,7 +143,7 @@ void opRS485Destroy(U8 comWingID);
 * @arg		U8 comWingID					ID of the selected COM Wing
 * @return	U8 errorCode					STD Error Code
 */
-U8 opRS485Control (U8 comWingID);
+U8 opRS485Engine(U8 comWingID);
 
 /**
 * \fn		U8 opRS485Engine (U8 comWingID)
@@ -136,7 +152,7 @@ U8 opRS485Control (U8 comWingID);
 * @arg		U8 comWingID					ID of the selected COM Wing
 * @return	U8 errorCode					STD Error Code
 */
-U8 opRS485Engine (U8 comWingID);
+U8 opRS485Parse(U8 comWingID);
 
 /**
 * \fn		void opRS485SetTerm(U8 comWingID, U8 termState)

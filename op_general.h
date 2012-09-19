@@ -100,7 +100,7 @@ typedef enum
 // COM wing control
 typedef union
 {
-	U32 all[5];
+	U32 all[10];
 	struct
 	{
 		tCOMWingType type;				//Type of the COM wing connected
@@ -108,9 +108,11 @@ typedef union
 		tCOMWingState state;				//General state of the COM wing
 		void * controlReg;				//Control reg for the specific type of COM wing
 		void * (*comWingInit)(U8 comWingID);		//Init function
-		void * (*comWingDestroy)(U8 comWingID);		//Destroy function
+		void (*comWingDestroy)(U8 comWingID);		//Destroy function
 		U8 (*comWingControl)(U8 comWingID);		//Control function
 		U8 (*comWingEngine)(U8 comWingID);		//Engine function
+		void (*comWingDataISR)(U8 peripheralID);	//Dedicated data peripheral ISR (spi or uart)
+		void (*comWingTimerISR)(U8 timerID);		//Dedicated Timer ISR
 	};
 }tCOMWingControl;
 
@@ -187,6 +189,15 @@ void opSetStatusLed(U8 red, U8 green, U8 blue);
 
 // ==== Control Functions ==== //
 /**
+* \fn		void comWingInit(U8 comWingID)
+* @brief	Initialise the control Reg of a COM Wing
+* @note
+* @arg		U8 comWingID				ID of the wing targeted
+* @return	nothing
+*/
+void comWingInit(U8 comWingID);
+
+/**
 * \fn		U8 comWingIdentify(U8 comWingID, U16 IDData)
 * @brief	Scan and detect present COM Wings
 * @note
@@ -202,7 +213,7 @@ U8 comWingIdentify(U8 comWingID, U16 IDData);
 * @arg		U8 comWingID				ID of COM wing to be assigned
 * @return	U8 errorCode				STD Error Code
 */
-U8 comWingAssign(U8 comWingID);
+U8 comWingAssign(tCOMWingControl * controlPtr);
 
 /**
 * \fn		U8 comWingDetectionEngine(void)

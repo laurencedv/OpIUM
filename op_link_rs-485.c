@@ -22,8 +22,6 @@ extern U8 COM_UART_ID[];
 extern tIntIRQ COM_TIMER_INT[];
 extern tIntIRQ COM_UART_INT[];
 
-U8 flagTest[2] = {1,1};
-
 // ==== Control ==== //
 tOpRS485Control * opRS485ControlReg[COM_WING_NB] = {NULL};
 // ================= //
@@ -64,7 +62,7 @@ tOpRS485Control * opRS485Init(U8 comWingID)
 			// -- Initialise Control -- //
 			tempOpRS485ControlReg->currentFrame = 0;
 			tempOpRS485ControlReg->currentSlot = 0;
-			tempOpRS485ControlReg->linkState = detect;
+			tempOpRS485ControlReg->linkState = RSSdetect;
 			tempOpRS485ControlReg->linkSubState = RSSinit;
 			tempOpRS485ControlReg->slotNb = 0;
 			tempOpRS485ControlReg->utilityCnt = 0;
@@ -151,8 +149,43 @@ void opRS485Destroy(U8 comWingID)
 * @arg		U8 comWingID					ID of the selected COM Wing
 * @return	U8 errorCode					STD Error Code
 */
-U8 opRS485Control(U8 comWingID)
+U8 opRS485Engine(U8 comWingID)
 {
+	tOpRS485Control * workPtr = opRS485ControlReg[comWingID];
+	switch (workPtr->linkState)
+	{
+		//* -- Detect Network ------ *//
+		case RSSdetect:
+		{
+			// -- Initialise -- //
+			if (workPtr->linkSubState == RSSinit)
+			{
+				// Wait for a sync frame
+				timerSetOverflow(workPtr->timerID,OP_RS485_TIME_WAIT_INIT);
+				timerStart(workPtr->timerID);
+				workPtr->linkSubState == RSSwait;
+			}
+			// ---------------- //
+			break;
+		}
+		//* -- Election of Master -- *//
+		case RSSelection:
+		{
+			break;
+		}
+		//* -- Master -------------- *//
+		case RSSmaster:
+		{
+			break;
+		}
+		//* -- Slave --------------- *//
+		case RSSslave:
+		{
+			break;
+		}
+		default:	break;
+		//* ------------------------ *//
+	}
 	return STD_EC_SUCCESS;
 }
 
@@ -163,20 +196,16 @@ U8 opRS485Control(U8 comWingID)
 * @arg		U8 comWingID					ID of the selected COM Wing
 * @return	U8 errorCode					STD Error Code
 */
-U8 opRS485Engine(U8 comWingID)
+U8 opRS485Parse(U8 comWingID)
 {
-	if (flagTest[comWingID] == 1)
-	{
-		
-		flagTest[comWingID] = 0;
-	}
+	
 	return STD_EC_SUCCESS;
 }
 
 /**
 * \fn		void opRS485SetTerm(U8 comWingID, U8 termState)
 * @brief	Set the state of the RS-485 120? terminator
-* @note		Use ENABLE of DISABLE for $state
+* @note		Use ENABLE or DISABLE for $termState
 * @arg		U8 comWingID					ID of the selected COM Wing
 * @arg		U8 termState					State of the terminator
 * @return	nothing
@@ -195,14 +224,15 @@ void opRS485SetTerm(U8 comWingID, U8 termState)
 	#endif
 	#endif
 	#endif
-		default:	break;
+		default:	return;
 	}
+	opRS485ControlReg[comWingID]->terminatorState = termState;	//Save the state
 }
 
 /**
 * \fn		U8 opRS485GetTerm(U8 comWingID)
 * @brief	Return the actual state of the RS-485 120? terminator
-* @note		The state is return as ENABLE of DISABLE
+* @note		The state is return as ENABLE or DISABLE
 * @arg		U8 comWingID					ID of the selected COM Wing
 * @return	U8 termState					State of the terminator
 */
@@ -210,6 +240,46 @@ U8 opRS485GetTerm(U8 comWingID)
 {
 
 	return opRS485ControlReg[comWingID]->terminatorState;
+}
+
+/**
+* \fn		void opRS485SetDir(U8 comWingID, U8 dataDir)
+* @brief	Set the data direction of the RS-485 transceiver
+* @note		Use OP_RS485_DIR_TX or OP_RS485_DIR_RX for $dataDir
+* @arg		U8 comWingID					ID of the selected COM Wing
+* @arg		U8 termState					State of the terminator
+* @return	nothing
+*/
+void opRS485SetDir(U8 comWingID, U8 dataDir)
+{
+	switch (comWingID)
+	{
+	#if COM_WING_NB >= 1
+		case COM_WING_0: dataDir == OP_RS485_DIR_TX ? setPIN(COM0_IO1) : clearPIN(COM0_IO1);	break;
+	#if COM_WING_NB >= 2
+		case COM_WING_1: dataDir == OP_RS485_DIR_TX ? setPIN(COM1_IO1) : clearPIN(COM1_IO1);	break;
+	#if COM_WING_NB == 4
+		case COM_WING_2: dataDir == OP_RS485_DIR_TX ? setPIN(COM2_IO1) : clearPIN(COM2_IO1);	break;
+		case COM_WING_3: dataDir == OP_RS485_DIR_TX ? setPIN(COM3_IO1) : clearPIN(COM3_IO1);	break;
+	#endif
+	#endif
+	#endif
+		default:	return;
+	}
+	opRS485ControlReg[comWingID]->dataDirection = dataDir;
+}
+
+/**
+* \fn		U8 opRS485GetTerm(U8 comWingID)
+* @brief	Return the actual direction of data of the RS-485 transceiver
+* @note		The direction is return as OP_RS485_DIR_TX or OP_RS485_DIR_RX
+* @arg		U8 comWingID					ID of the selected COM Wing
+* @return	U8 dataDir					Direction of the data
+*/
+U8 opRS485GetDir(U8 comWingID)
+{
+
+	return opRS485ControlReg[comWingID]->dataDirection;
 }
 
 /**

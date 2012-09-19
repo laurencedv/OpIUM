@@ -47,6 +47,8 @@ U8 opLinkPacketBufCreate(U16 packetID, U16 packetSize)
 
 	// -- Allocate the buffer -- //
 	// ------------------------- //
+
+	return 0;
 }
 
 /**
@@ -58,7 +60,7 @@ U8 opLinkPacketBufCreate(U16 packetID, U16 packetSize)
 */
 U8 opLinkPacketBufRemove(U16 packetID)
 {
-
+	return 0;
 }
 // ========================== //
 
