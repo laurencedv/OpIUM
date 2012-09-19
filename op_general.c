@@ -208,8 +208,10 @@ U8 comWingIdentify(U8 comWingID, U16 IDData)
 * @arg		U8 comWingID				ID of COM wing to be assigned
 * @return	U8 errorCode				STD Error Code
 */
-U8 comWingAssign(tCOMWingControl * controlPtr)
+U8 comWingAssign(U8 comWingID)
 {
+	tCOMWingControl * controlPtr = COMWingControl[comWingID];
+
 	if (controlPtr->state != CWSundetected)
 	{
 		// -- Assign ISR and Control -- //
@@ -217,9 +219,9 @@ U8 comWingAssign(tCOMWingControl * controlPtr)
 		{
 			case CWTnrf:
 			{
-				controlPtr->comWingInit = NULL;
+				controlPtr->comWingCreate = NULL;
 				controlPtr->comWingDestroy = NULL;
-				controlPtr->comWingControl = NULL;
+				controlPtr->comWingParse = NULL;
 				controlPtr->comWingEngine = NULL;
 				controlPtr->comWingDataISR = NULL;
 				controlPtr->comWingTimerISR = NULL;
@@ -227,19 +229,19 @@ U8 comWingAssign(tCOMWingControl * controlPtr)
 			}
 			case CWTrs485:
 			{
-				controlPtr->comWingInit = &opRS485Init;
+				controlPtr->comWingCreate = &opRS485Create;
 				controlPtr->comWingDestroy = &opRS485Destroy;
-				controlPtr->comWingControl = &opRS485Control;
+				controlPtr->comWingParse = &opRS485Parse;
 				controlPtr->comWingEngine = &opRS485Engine;
-				controlPtr->comWingDataISR = NULL;
-				controlPtr->comWingTimerISR = NULL;
+				controlPtr->comWingDataISR = &opRS485UartISR;
+				controlPtr->comWingTimerISR = &opRS485TimerISR;
 				break;
 			}
 			case CWTspi:
 			{
-				controlPtr->comWingInit = NULL;
+				controlPtr->comWingCreate = NULL;
 				controlPtr->comWingDestroy = NULL;
-				controlPtr->comWingControl = NULL;
+				controlPtr->comWingParse = NULL;
 				controlPtr->comWingEngine = NULL;
 				controlPtr->comWingDataISR = NULL;
 				controlPtr->comWingTimerISR = NULL;
@@ -247,9 +249,9 @@ U8 comWingAssign(tCOMWingControl * controlPtr)
 			}
 			case CWTbluetooth:
 			{
-				controlPtr->comWingInit = NULL;
+				controlPtr->comWingCreate = NULL;
 				controlPtr->comWingDestroy = NULL;
-				controlPtr->comWingControl = NULL;
+				controlPtr->comWingParse = NULL;
 				controlPtr->comWingEngine = NULL;
 				controlPtr->comWingDataISR = NULL;
 				controlPtr->comWingTimerISR = NULL;
@@ -257,9 +259,9 @@ U8 comWingAssign(tCOMWingControl * controlPtr)
 			}
 			case CWTethernet:
 			{
-				controlPtr->comWingInit = NULL;
+				controlPtr->comWingCreate = NULL;
 				controlPtr->comWingDestroy = NULL;
-				controlPtr->comWingControl = NULL;
+				controlPtr->comWingParse = NULL;
 				controlPtr->comWingEngine = NULL;
 				controlPtr->comWingDataISR = NULL;
 				controlPtr->comWingTimerISR = NULL;
@@ -267,9 +269,9 @@ U8 comWingAssign(tCOMWingControl * controlPtr)
 			}
 			case CWTlol:
 			{
-				controlPtr->comWingInit = NULL;
+				controlPtr->comWingCreate = NULL;
 				controlPtr->comWingDestroy = NULL;
-				controlPtr->comWingControl = NULL;
+				controlPtr->comWingParse = NULL;
 				controlPtr->comWingEngine = NULL;
 				controlPtr->comWingDataISR = NULL;
 				controlPtr->comWingTimerISR = NULL;
@@ -388,7 +390,7 @@ U8 comWingEngine(U8 comWingID)
 		{
 			// -- Assign variables and function -- //
 			workPtr->type = workPtr->newType;
-			comWingAssign(workPtr);
+			comWingAssign(comWingID);
 			// ----------------------------------- //
 
 			workPtr->state = CWSinit;
@@ -398,7 +400,7 @@ U8 comWingEngine(U8 comWingID)
 		case CWSinit:
 		{
 			// -- Init and save the control Reg -- //
-			workPtr->controlReg = workPtr->comWingInit(comWingID);
+			workPtr->controlReg = workPtr->comWingCreate(comWingID);
 			// ----------------------------------- //
 			
 			workPtr->state = CWSidle;
@@ -408,7 +410,7 @@ U8 comWingEngine(U8 comWingID)
 		case CWSidle:
 		{
 			// -- Treat the Control -- //
-			workPtr->comWingControl(comWingID);
+			workPtr->comWingEngine(workPtr->controlReg);
 			// ----------------------- //
 
 			break;
@@ -417,15 +419,19 @@ U8 comWingEngine(U8 comWingID)
 		case CWSbusy:
 		{
 			// -- Treat the data -- //
-			workPtr->comWingEngine(comWingID);
+			workPtr->comWingParse(workPtr->controlReg);
 			// -------------------- //
+
+			workPtr->state = CWSidle;
 
 			break;
 		}
 		//* -- Error ------- *//
 		case CWSerror:
 		{
-			// Handle error
+			// -- Handle error -- //
+
+			// ------------------ //
 			
 			// -- Handle disconnection -- //
 			if (COMWingControl[comWingID].type == CWTunknown)
@@ -438,7 +444,7 @@ U8 comWingEngine(U8 comWingID)
 		case CWSdisconnect:
 		{
 			// -- Destroy the specific type -- //
-			workPtr->comWingDestroy(comWingID);
+			workPtr->comWingDestroy(workPtr->controlReg);
 			// ------------------------------- //
 
 			// -- Assign the new type -- //

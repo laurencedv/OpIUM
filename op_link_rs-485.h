@@ -45,6 +45,10 @@
 #define OP_RS485_LED_STAT_BLINK_SLOW	0x3
 #define OP_RS485_LED_STAT_BLINK_FAST	0x4
 
+// RS-485 Reserved Address
+#define OP_RS485_ADD_BROADCAST		0
+#define OP_RS485_ADD_MASTER		1
+
 // Timing
 #define OP_RS485_TIME_WAIT_INIT		300000			//Time to wait a sync slot at init
 // ############################################## //
@@ -99,10 +103,22 @@ typedef union
 		U8 terminatorState;
 		U8 dataDirection;
 		U8 rsAddress;
+		U8 comWingID;
 	};
 }tOpRS485Control;
 
-// RS-485 Packet Header
+// -- RS-485 Packet -- //
+// Packet Command
+typedef enum
+{
+	RScmdSync = 0,
+	RScmdAskSlot,
+	RScmdGiveSlot,
+	RScmdRemSlot,
+	RScmdData
+}tOpRS485PacketCommand;
+
+// Packet Header
 typedef union
 {
 	U32 all;
@@ -111,87 +127,112 @@ typedef union
 		U8 delimiter;
 		U8 byteNb;
 		U8 destination;
+		tOpRS485PacketCommand command;
 	};
 }tOpRS485PacketHeader;
+// ------------------- //
 // ############################################## //
 
 
 // ################# Prototypes ################# //
+// ==== Interrupt Functions ==== //
+/**
+* \fn		void opRS485TimerISR(void * controlReg)
+* @brief	Timer ISR for the RS-485 COM Wing
+* @note
+* @arg		void * controlReg				Pointer to the control Reg
+* @return	nothing
+*/
+void opRS485TimerISR(void * controlReg);
+
+/**
+* \fn		void opRS485UartISR(void * controlReg)
+* @brief	UART ISR for the RS-485 COM Wing
+* @note
+* @arg		void * controlReg				Pointer to the control Reg
+* @return	nothing
+*/
+void opRS485UartISR(void * controlReg);
+// ============================= //
+
+
 // ==== Control Functions ==== //
 /**
-* \fn		U8 opRS485Init(U8 comWingID)
-* @brief
+* \fn		tOpRS485Control * opRS485Create(U8 comWingID)
+* @brief	Create the control reg for a RS-485 Wing and initialise the peripheral
 * @note
-* @arg		U8 comWingID					ID of the selected COM Wing
-* @return	U8 errorCode					STD Error Code
+* @arg		void * controlReg				Pointer to the control Reg
+* @return	tOpRS485Control * tempOpRS485ControlReg		Pointer to the control Reg
 */
-tOpRS485Control * opRS485Init(U8 comWingID);
+tOpRS485Control * opRS485Create(U8 comWingID);
 
 /**
 * \fn		U8 opRS485Destroy(tOpRS485Control * controlToDestroy)
 * @brief	Deallocated and stop everything related to a RS-485 COM Wing
 * @note		This can fail! Try-and-Pray!
-* @arg		U8 comWingID					ID of the selected COM Wing
+* @arg		void * controlReg				Pointer to the control Reg
 * @return	nothing
 */
-void opRS485Destroy(U8 comWingID);
+void opRS485Destroy(void * controlReg);
 
 /**
-* \fn		U8 opRS485Control (U8 comWingID)
+* \fn		U8 opRS485Control (void * controlReg)
 * @brief
 * @note
-* @arg		U8 comWingID					ID of the selected COM Wing
+* @arg		U8void * controlReg				Pointer to the control Reg
 * @return	U8 errorCode					STD Error Code
 */
-U8 opRS485Engine(U8 comWingID);
+U8 opRS485Engine(void * controlReg);
 
 /**
-* \fn		U8 opRS485Engine (U8 comWingID)
-* @brief
-* @note
-* @arg		U8 comWingID					ID of the selected COM Wing
-* @return	U8 errorCode					STD Error Code
-*/
-U8 opRS485Parse(U8 comWingID);
-
-/**
-* \fn		void opRS485SetTerm(U8 comWingID, U8 termState)
+* \fn		void opRS485SetTerm(void * controlReg, U8 termState)
 * @brief	Set the state of the RS-485 120? terminator
 * @note
-* @arg		U8 comWingID					ID of the selected COM Wing
+* @arg		Uvoid * controlReg				Pointer to the control Reg
 * @arg		U8 termState					State of the terminator
 * @return	nothing
 */
-void opRS485SetTerm(U8 comWingID, U8 termState);
+void opRS485SetTerm(void * controlReg, U8 termState);
 
 /**
-* \fn		U8 opRS485GetTerm(U8 comWingID)
+* \fn		U8 opRS485GetTerm(void * controlReg)
 * @brief	Return the actual state of the RS-485 120? terminator
 * @note
-* @arg		U8 comWingID					ID of the selected COM Wing
+* @arg		void * controlReg				Pointer to the control Reg
 * @return	U8 termState					State of the terminator
 */
-U8 opRS485GetTerm(U8 comWingID);
+U8 opRS485GetTerm(void * controlReg);
 
 /**
-* \fn		void opRS485SetStatusLed(U8 comWingID, U8 ledState)
+* \fn		void opRS485SetStatusLed(void * controlReg, U8 ledState)
 * @brief	Set the state of the Status LED
 * @note
-* @arg		U8 comWingID					ID of the selected COM Wing
+* @arg		void * controlReg				Pointer to the control Reg
 * @arg		U8 ledState					State of the LED
 * @return	nothing
 */
-void opRS485SetStatusLed(U8 comWingID, U8 ledState);
+void opRS485SetStatusLed(void * controlReg, U8 ledState);
 
 /**
-* \fn		U8 opRS485GetStatusLed(U8 comWingID)
+* \fn		U8 opRS485GetStatusLed(void * controlReg)
 * @brief	Return the actual state of the Status LED
 * @note
-* @arg		U8 comWingID					ID of the selected COM Wing
+* @arg		void * controlReg				Pointer to the control Reg
 * @return	U8 ledState					State of the LED
 */
-U8 opRS485GetStatusLed(U8 comWingID);
+U8 opRS485GetStatusLed(void * controlReg);
 // =========================== //
+
+// ==== Data Functions ==== //
+/**
+* \fn		U8 opRS485Parse(void * controlReg);
+* @brief
+* @note
+* @arg		void * controlReg				ID of the selected COM Wing
+* @return	U8 errorCode					STD Error Code
+*/
+U8 opRS485Parse(void * controlReg);
+// ======================== //
 // ############################################## //
 
 #endif

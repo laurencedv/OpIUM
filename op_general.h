@@ -73,6 +73,7 @@
 
 
 // ################# Data Type ################## //
+// ======== COM Wings ======== //
 // COM wing state
 typedef enum
 {
@@ -107,16 +108,18 @@ typedef union
 		tCOMWingType newType;				//Type of the COM wing newly detected
 		tCOMWingState state;				//General state of the COM wing
 		void * controlReg;				//Control reg for the specific type of COM wing
-		void * (*comWingInit)(U8 comWingID);		//Init function
-		void (*comWingDestroy)(U8 comWingID);		//Destroy function
-		U8 (*comWingControl)(U8 comWingID);		//Control function
-		U8 (*comWingEngine)(U8 comWingID);		//Engine function
-		void (*comWingDataISR)(U8 peripheralID);	//Dedicated data peripheral ISR (spi or uart)
-		void (*comWingTimerISR)(U8 timerID);		//Dedicated Timer ISR
+		void * (*comWingCreate)(U8 comWingID);		//Create function
+		void (*comWingDestroy)(void * controlReg);	//Destroy function
+		U8 (*comWingEngine)(void * controlReg);		//Engine function
+		U8 (*comWingParse)(void * controlReg);		//Packet Parsing function
+		void (*comWingDataISR)(void * controlReg);	//Dedicated data peripheral ISR (spi or uart)
+		void (*comWingTimerISR)(void * controlReg);	//Dedicated Timer ISR
 	};
 }tCOMWingControl;
+// =========================== //
 
-// Packet Type
+// ======== OpIUM Packet ======== //
+// OpIUM Packet Type
 typedef enum
 {
 	OPPTnodeCommand = 0x00,
@@ -157,6 +160,7 @@ typedef union
 		U8 payloadSize;
 	};
 }tOpPacketHeader;
+// ============================== //
 // ############################################## //
 
 
