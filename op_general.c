@@ -210,7 +210,7 @@ U8 comWingIdentify(U8 comWingID, U16 IDData)
 */
 U8 comWingAssign(U8 comWingID)
 {
-	tCOMWingControl * controlPtr = COMWingControl[comWingID];
+	tCOMWingControl * controlPtr = &COMWingControl[comWingID];
 
 	if (controlPtr->state != CWSundetected)
 	{
@@ -295,7 +295,8 @@ U8 comWingAssign(U8 comWingID)
 U8 comWingDetectionEngine(void)
 {
 	U8 wu0;
-	U32 tempResult = 0;
+	U32 tempResult;
+	S32 resultDiff = 0;
 
 	switch (comDetectEngineState)
 	{
@@ -342,18 +343,22 @@ U8 comWingDetectionEngine(void)
 			if (comDetectADCDoneFlag == ADC_CONV_DONE)
 			{
 				// -- Check if the pin is floating -- //
-
+				for (wu0 = 0; wu0 < (COM_WING_DETECT_RESULT_NB-1); wu0++)
+					resultDiff += comDetectResult[comDetectComID][wu0] - comDetectResult[comDetectComID][wu0+1];
+				if (abs(resultDiff) < COM_WING_DETECT_ACCEPT_RANGE)
 				// ---------------------------------- //
+				{
+					// -- Round the result -- //
+					tempResult = 0;
+					for (wu0 = 0; wu0 < COM_WING_DETECT_RESULT_NB; wu0++)
+						tempResult += comDetectResult[comDetectComID][wu0];
+					tempResult /= COM_WING_DETECT_RESULT_NB;
+					// ---------------------- //
 
-				// -- Round the result -- //
-				for (wu0 = 0; wu0 < COM_WING_DETECT_RESULT_NB; wu0++)
-					tempResult += comDetectResult[comDetectComID][wu0];
-				tempResult /= COM_WING_DETECT_RESULT_NB;
-				// ---------------------- //
-
-				// -- Identify the correct type -- //
-				comWingIdentify(comDetectComID, tempResult);
-				// ------------------------------- //
+					// -- Identify the correct type -- //
+					comWingIdentify(comDetectComID, tempResult);
+					// ------------------------------- //
+				}
 
 				// -- Select the next COM Wing -- //
 				comDetectComID++;
@@ -399,11 +404,22 @@ U8 comWingEngine(U8 comWingID)
 		//* -- Init -------- *//
 		case CWSinit:
 		{
+			void * tempPtr;
+
 			// -- Init and save the control Reg -- //
-			workPtr->controlReg = workPtr->comWingCreate(comWingID);
+			tempPtr = workPtr->comWingCreate(comWingID);
+			if (tempPtr != NULL)
+			{
+				workPtr->controlReg = tempPtr;		//Control reg created correctly
+				workPtr->state = CWSidle;
+			}
+			else
+			{
+									//Control reg failed to be created
+				workPtr->state = CWSdisconnect;
+			}
 			// ----------------------------------- //
 			
-			workPtr->state = CWSidle;
 			break;
 		}
 		//* -- Idle -------- *//

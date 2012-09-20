@@ -57,13 +57,13 @@ void opRS485UartISR(void * controlReg)
 
 // ############## Control Functions ############# //
 /**
-* \fn		tOpRS485Control * opRS485Create(U8 comWingID)
+* \fn		void * opRS485Create(U8 comWingID)
 * @brief	Create the control reg for a RS-485 Wing and initialise the peripheral
 * @note
-* @arg		U8 comWingID					ID of the selected COM Wing
-* @return	tOpRS485Control * tempOpRS485ControlReg		Pointer to the control Reg
+* @arg		U8 comWingID					ID of the initialising COM Wing
+* @return	void * tempOpRS485ControlReg			Pointer to the control Reg
 */
-tOpRS485Control * opRS485Create(U8 comWingID)
+void * opRS485Create(U8 comWingID)
 {
 	tOpRS485Control * tempOpRS485ControlReg;
 
@@ -81,25 +81,37 @@ tOpRS485Control * opRS485Create(U8 comWingID)
 			//Count the allocated ram
 			heapAvailable -= sizeof(tOpRS485Slot);
 
-			// -- Assign Hardware -- //
-			tempOpRS485ControlReg->timerID = COM_TIMER_ID[comWingID];									// TODO
-			tempOpRS485ControlReg->uartID = COM_UART_ID[comWingID];
-			// --------------------- //
+			tempOpRS485ControlReg->packetControl = (tOpRS485Control*)malloc(sizeof(tOpRS485PacketControl));
+			if (tempOpRS485ControlReg->packetControl != NULL)
+			{
+				//Count the allocated ram
+				heapAvailable -= sizeof(tOpRS485Control);
 
-			// -- Initialise Control -- //
-			tempOpRS485ControlReg->currentFrame = 0;
-			tempOpRS485ControlReg->currentSlot = 0;
-			tempOpRS485ControlReg->linkState = RSSdetect;
-			tempOpRS485ControlReg->linkSubState = RSSinit;
-			tempOpRS485ControlReg->slotNb = 0;
-			tempOpRS485ControlReg->utilityCnt = 0;
-			tempOpRS485ControlReg->comWingID = comWingID;
-			// ------------------------ //
+				// -- Assign Hardware -- //
+				tempOpRS485ControlReg->timerID = COM_TIMER_ID[comWingID];									// TODO
+				tempOpRS485ControlReg->uartID = COM_UART_ID[comWingID];
+				// --------------------- //
+
+				// -- Initialise Control -- //
+				tempOpRS485ControlReg->currentFrame = 0;
+				tempOpRS485ControlReg->currentSlot = 0;
+				tempOpRS485ControlReg->linkState = RSSdetect;
+				tempOpRS485ControlReg->linkSubState = RSSinit;
+				tempOpRS485ControlReg->slotNb = 0;
+				tempOpRS485ControlReg->utilityCnt = 0;
+				tempOpRS485ControlReg->comWingID = comWingID;
+				// ------------------------ //
+			}
+			else
+			{
+				// -- Something went Wrong -- //
+				tempOpRS485ControlReg = NULL;			//Output a NULL pointer
+				// -------------------------- //
+			}
 		}
 		else
 		{
 			// -- Something went Wrong -- //
-			//opRS485Destroy(tempOpRS485ControlReg);		//Destroy the control Reg
 			tempOpRS485ControlReg = NULL;				//Output a NULL pointer
 			// -------------------------- //
 		}
@@ -127,7 +139,7 @@ tOpRS485Control * opRS485Create(U8 comWingID)
 	}
 	// ---------------------- //
 
-	return tempOpRS485ControlReg;
+	return (void*)tempOpRS485ControlReg;
 }
 
 /**
@@ -158,9 +170,10 @@ void opRS485Destroy(void * controlReg)
 	// -------------- //
 
 	// -- Destroy all memory allocated -- //
-	free(workControlReg->slotControl) ;
+	free(workControlReg->slotControl);
+	free(workControlReg->packetControl);
 	free(workControlReg);
-	heapAvailable += (sizeof(tOpRS485Control)+sizeof(tOpRS485Slot));
+	heapAvailable += (sizeof(tOpRS485Control)+sizeof(tOpRS485Slot)+sizeof(tOpRS485Control));
 	// ---------------------------------- //
 }
 
@@ -181,7 +194,7 @@ U8 opRS485Engine(void * controlReg)
 		case RSSdetect:
 		{
 			// -- Display the status -- //
-			opRS485SetStatusLed(controlReg, OP_RS485_LED_STAT_BLINK_FAST);	//Status LED will flash rapidly to indicate when are searching for a network
+			opRS485SetStatusLed(workPtr, OP_RS485_LED_STAT_BLINK_FAST);	//Status LED will flash rapidly to indicate when are searching for a network
 			// ------------------------ //
 
 			// -- Initialise -- //
@@ -345,7 +358,7 @@ void opRS485SetStatusLed(void * controlReg, U8 ledState)
 			case OP_RS485_LED_STAT_BLINK:		blinkPeriod = 250;	break;
 			case OP_RS485_LED_STAT_BLINK_SLOW:	blinkPeriod = 500;	break;
 			case OP_RS485_LED_STAT_BLINK_FAST:	blinkPeriod = 100;	break;
-			default:	ledPtr[-2+ledState] = ledMask;		return;
+			default:	ledPtr[-2+ledState] = ledMask;			return;
 		}
 		((tOpRS485Control*)controlReg)->statusLedSoftCntID = softCntInit(blinkPeriod, ledPtr, ledMask,SOFT_CNT_RELOAD_EN+SOFT_CNT_TARGET_EN);
 		softCntStart(((tOpRS485Control*)controlReg)->statusLedSoftCntID);
@@ -378,9 +391,12 @@ U8 opRS485GetStatusLed(void * controlReg)
 */
 U8 opRS485Parse(void * controlReg)
 {
-	workPtr
+	tOpRS485Control * workPtr = controlReg;
 
+	switch (workPtr->linkState)
+	{
 
+	}
 	return STD_EC_SUCCESS;
 }
 // ############################################## //

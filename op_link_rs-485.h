@@ -55,58 +55,6 @@
 
 
 // ################# Data Type ################## //
-// Link State
-typedef enum
-{
-	RSSdetect = 0,
-	RSSelection,
-	RSSmaster,
-	RSSslave
-}tOpRS485LinkState;
-
-// Link SubState
-typedef enum 
-{
-	RSSinit = 0,
-	RSSactive,
-	RSSwait
-}tOpRS485LinkSubState;
-
-// Slot control
-typedef union
-{
-	U16 all;
-	struct
-	{
-		U8 frame;
-		U8 slot;
-	};
-}tOpRS485Slot;
-
-// Control
-typedef union
-{
-	U32 all[5];
-	struct
-	{
-		tOpRS485LinkState linkState;
-		tOpRS485LinkSubState linkSubState;
-		U8 timerID;
-		U8 uartID;
-		U8 utilityCnt;
-		U8 slotNb;
-		tOpRS485Slot * slotControl;
-		U8 currentFrame;
-		U8 currentSlot;
-		U8 statusLedState;
-		U8 statusLedSoftCntID;
-		U8 terminatorState;
-		U8 dataDirection;
-		U8 rsAddress;
-		U8 comWingID;
-	};
-}tOpRS485Control;
-
 // -- RS-485 Packet -- //
 // Packet Command
 typedef enum
@@ -130,7 +78,73 @@ typedef union
 		tOpRS485PacketCommand command;
 	};
 }tOpRS485PacketHeader;
+
+typedef union
+{
+	U32 all;
+	struct
+	{
+		U8 inPacket:1;
+		U8 :7;
+		U8 :8;
+		U8 :8;
+		U8 :8;
+	};
+}tOpRS485PacketControl;
 // ------------------- //
+
+// Link State
+typedef enum
+{
+	RSSdetect = 0,
+	RSSelection,
+	RSSmaster,
+	RSSslave
+}tOpRS485LinkState;
+
+// Link SubState
+typedef enum
+{
+	RSSinit = 0,
+	RSSactive,
+	RSSwait
+}tOpRS485LinkSubState;
+
+// Slot control
+typedef union
+{
+	U16 all;
+	struct
+	{
+		U8 frame;
+		U8 slot;
+	};
+}tOpRS485Slot;
+
+// Control
+typedef union
+{
+	U32 all[6];
+	struct
+	{
+		tOpRS485LinkState linkState;
+		tOpRS485LinkSubState linkSubState;
+		U8 timerID;
+		U8 uartID;
+		U8 utilityCnt;
+		U8 slotNb;
+		tOpRS485Slot * slotControl;
+		tOpRS485PacketControl * packetControl;
+		U8 currentFrame;
+		U8 currentSlot;
+		U8 statusLedState;
+		U8 statusLedSoftCntID;
+		U8 terminatorState;
+		U8 dataDirection;
+		U8 rsAddress;
+		U8 comWingID;
+	};
+}tOpRS485Control;
 // ############################################## //
 
 
@@ -158,13 +172,13 @@ void opRS485UartISR(void * controlReg);
 
 // ==== Control Functions ==== //
 /**
-* \fn		tOpRS485Control * opRS485Create(U8 comWingID)
+* \fn		void * opRS485Create(U8 comWingID)
 * @brief	Create the control reg for a RS-485 Wing and initialise the peripheral
 * @note
-* @arg		void * controlReg				Pointer to the control Reg
-* @return	tOpRS485Control * tempOpRS485ControlReg		Pointer to the control Reg
+* @arg		U8 comWingID					ID of the initialising COM Wing
+* @return	void * tempOpRS485ControlReg			Pointer to the control Reg
 */
-tOpRS485Control * opRS485Create(U8 comWingID);
+void * opRS485Create(U8 comWingID);
 
 /**
 * \fn		U8 opRS485Destroy(tOpRS485Control * controlToDestroy)

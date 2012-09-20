@@ -60,6 +60,7 @@
 #define COM_WING_DETECT_PERIOD		100
 #define COM_WING_DETECT_PERIOD_AT_RUN	1000
 #define COM_WING_DETECT_RESULT_NB	10
+#define COM_WING_DETECT_ACCEPT_RANGE	30
 
 // COM Peripherals Speed
 #define COM_UART_LOW_SPEED		100000			//COM's UART Baud Rate at low speed
@@ -217,7 +218,7 @@ U8 comWingIdentify(U8 comWingID, U16 IDData);
 * @arg		U8 comWingID				ID of COM wing to be assigned
 * @return	U8 errorCode				STD Error Code
 */
-U8 comWingAssign(tCOMWingControl * controlPtr);
+U8 comWingAssign(U8 comWingID);
 
 /**
 * \fn		U8 comWingDetectionEngine(void)
