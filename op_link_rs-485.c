@@ -100,6 +100,8 @@ void * opRS485Create(U8 comWingID)
 				tempOpRS485ControlReg->slotNb = 0;
 				tempOpRS485ControlReg->utilityCnt = 0;
 				tempOpRS485ControlReg->comWingID = comWingID;
+				tempOpRS485ControlReg->statusLedSoftCntID = SOFT_CNT_MAX;
+				tempOpRS485ControlReg->statusLedState = OP_RS485_LED_STAT_OFF;
 				// ------------------------ //
 			}
 			else
@@ -360,7 +362,12 @@ void opRS485SetStatusLed(void * controlReg, U8 ledState)
 			case OP_RS485_LED_STAT_BLINK_FAST:	blinkPeriod = 100;	break;
 			default:	ledPtr[-2+ledState] = ledMask;			return;
 		}
-		((tOpRS485Control*)controlReg)->statusLedSoftCntID = softCntInit(blinkPeriod, ledPtr, ledMask,SOFT_CNT_RELOAD_EN+SOFT_CNT_TARGET_EN);
+
+		if (((tOpRS485Control*)controlReg)->statusLedSoftCntID == SOFT_CNT_MAX)		//Check if the soft Counter is already initialised
+			((tOpRS485Control*)controlReg)->statusLedSoftCntID = softCntInit(blinkPeriod, ledPtr, ledMask,SOFT_CNT_RELOAD_EN+SOFT_CNT_TARGET_EN);
+		else
+			softCntUpdatePeriod(((tOpRS485Control*)controlReg)->statusLedSoftCntID, blinkPeriod);
+
 		softCntStart(((tOpRS485Control*)controlReg)->statusLedSoftCntID);
 		// ---------------------- //
 	}
