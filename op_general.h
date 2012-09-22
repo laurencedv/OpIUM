@@ -81,8 +81,7 @@ typedef enum
 	CWSundetected = 0,
 	CWSassign,
 	CWSinit,
-	CWSidle,
-	CWSbusy,
+	CWSactive,
 	CWSerror,
 	CWSdisconnect
 }tCOMWingState;
@@ -112,7 +111,6 @@ typedef union
 		void * (*comWingCreate)(U8 comWingID);		//Create function
 		void (*comWingDestroy)(void * controlReg);	//Destroy function
 		U8 (*comWingEngine)(void * controlReg);		//Engine function
-		U8 (*comWingParse)(void * controlReg);		//Packet Parsing function
 		void (*comWingDataISR)(void * controlReg);	//Dedicated data peripheral ISR (spi or uart)
 		void (*comWingTimerISR)(void * controlReg);	//Dedicated Timer ISR
 	};

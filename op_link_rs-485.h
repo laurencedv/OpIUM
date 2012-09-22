@@ -51,6 +51,13 @@
 
 // Timing
 #define OP_RS485_TIME_WAIT_INIT		300000			//Time to wait a sync slot at init
+
+// Packet
+#define OP_RS485_PKT_DELIMITER		0xEE			//Value of the packet delimiter
+#define OP_RS485_PKT_NO_HDR		0
+#define OP_RS485_PKT_HDR_FOUND		1
+#define OP_RS485_PKT_HDR_COMPLETE	2
+#define OP_RS485_PKT_COMPLETE		3
 // ############################################## //
 
 
@@ -69,7 +76,7 @@ typedef enum
 // Packet Header
 typedef union
 {
-	U32 all;
+	U8 all[4];
 	struct
 	{
 		U8 delimiter;
@@ -79,15 +86,24 @@ typedef union
 	};
 }tOpRS485PacketHeader;
 
+// Packet
+typedef struct
+{
+	
+	tOpRS485PacketHeader header;
+	U8 * dataPtr;
+	U8 dataSize;
+}tOpRS485Packet;
+
+// Packet Reception Control
 typedef union
 {
 	U32 all;
 	struct
 	{
-		U8 inPacket:1;
-		U8 :7;
-		U8 :8;
-		U8 :8;
+		U8 packetState;					//State of the reassembly of the packet
+		U8 byteTotal;					//Number of byte expected
+		U8 byteReceived;				//Number of byte received until now
 		U8 :8;
 	};
 }tOpRS485PacketControl;
@@ -106,8 +122,8 @@ typedef enum
 typedef enum
 {
 	RSSinit = 0,
-	RSSactive,
-	RSSwait
+	RSSidle,
+	RSSactive
 }tOpRS485LinkSubState;
 
 // Slot control
@@ -127,22 +143,22 @@ typedef union
 	U32 all[6];
 	struct
 	{
-		tOpRS485LinkState linkState;
-		tOpRS485LinkSubState linkSubState;
-		U8 timerID;
-		U8 uartID;
-		U8 utilityCnt;
-		U8 slotNb;
-		tOpRS485Slot * slotControl;
-		tOpRS485PacketControl * packetControl;
-		U8 currentFrame;
-		U8 currentSlot;
-		U8 statusLedState;
-		U8 statusLedSoftCntID;
-		U8 terminatorState;
-		U8 dataDirection;
-		U8 rsAddress;
-		U8 comWingID;
+		tOpRS485LinkState linkState;			//General State of the RS-485 Link
+		tOpRS485LinkSubState linkSubState;		//Sub State of the RS-485 Link
+		U8 timerID;					//Hardware Timer port assigned to this RS-485 wing
+		U8 uartID;					//Hardware Uart port assigned to this RS-485 wing
+		U8 utilityCnt;					//Utility counter value
+		U8 slotNb;					//Number of time slot assigned to this OpIUM node
+		tOpRS485Slot * slotControl;			//Control reg for the different slot assigned to this node
+		tOpRS485PacketControl packetControl;		//Control reg for the current transiting packet
+		U8 currentFrame;				//Current RS-485 time frame
+		U8 currentSlot;					//Current RS-485 time slot
+		U8 rsAddress;					//RS-485 bus address assigned to this RS-485 wing
+		U8 statusLedState;				//Current state of the RS-485 Status LED
+		U8 statusLedSoftCntID;				//Soft counter ID assigned to the RS-485 Status LED
+		U8 terminatorState;				//Current state of the RS-485 Bus terminator
+		U8 dataDirection;				//Current data direction of the RS-485 transceiver
+		U8 comWingID;					//COM Wing ID of this RS-485 wing
 	};
 }tOpRS485Control;
 // ############################################## //
@@ -235,7 +251,12 @@ void opRS485SetStatusLed(void * controlReg, U8 ledState);
 * @return	U8 ledState					State of the LED
 */
 U8 opRS485GetStatusLed(void * controlReg);
+
+tOpRS485Packet * opRS485CreatePacket(U8 dataSize);
+
+void opRS485DestroyPacket(tOpRS485Packet * packetPtr);
 // =========================== //
+
 
 // ==== Data Functions ==== //
 /**

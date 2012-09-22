@@ -221,7 +221,6 @@ U8 comWingAssign(U8 comWingID)
 			{
 				controlPtr->comWingCreate = NULL;
 				controlPtr->comWingDestroy = NULL;
-				controlPtr->comWingParse = NULL;
 				controlPtr->comWingEngine = NULL;
 				controlPtr->comWingDataISR = NULL;
 				controlPtr->comWingTimerISR = NULL;
@@ -231,7 +230,6 @@ U8 comWingAssign(U8 comWingID)
 			{
 				controlPtr->comWingCreate = &opRS485Create;
 				controlPtr->comWingDestroy = &opRS485Destroy;
-				controlPtr->comWingParse = &opRS485Parse;
 				controlPtr->comWingEngine = &opRS485Engine;
 				controlPtr->comWingDataISR = &opRS485UartISR;
 				controlPtr->comWingTimerISR = &opRS485TimerISR;
@@ -241,7 +239,6 @@ U8 comWingAssign(U8 comWingID)
 			{
 				controlPtr->comWingCreate = NULL;
 				controlPtr->comWingDestroy = NULL;
-				controlPtr->comWingParse = NULL;
 				controlPtr->comWingEngine = NULL;
 				controlPtr->comWingDataISR = NULL;
 				controlPtr->comWingTimerISR = NULL;
@@ -251,7 +248,6 @@ U8 comWingAssign(U8 comWingID)
 			{
 				controlPtr->comWingCreate = NULL;
 				controlPtr->comWingDestroy = NULL;
-				controlPtr->comWingParse = NULL;
 				controlPtr->comWingEngine = NULL;
 				controlPtr->comWingDataISR = NULL;
 				controlPtr->comWingTimerISR = NULL;
@@ -261,7 +257,6 @@ U8 comWingAssign(U8 comWingID)
 			{
 				controlPtr->comWingCreate = NULL;
 				controlPtr->comWingDestroy = NULL;
-				controlPtr->comWingParse = NULL;
 				controlPtr->comWingEngine = NULL;
 				controlPtr->comWingDataISR = NULL;
 				controlPtr->comWingTimerISR = NULL;
@@ -271,7 +266,6 @@ U8 comWingAssign(U8 comWingID)
 			{
 				controlPtr->comWingCreate = NULL;
 				controlPtr->comWingDestroy = NULL;
-				controlPtr->comWingParse = NULL;
 				controlPtr->comWingEngine = NULL;
 				controlPtr->comWingDataISR = NULL;
 				controlPtr->comWingTimerISR = NULL;
@@ -411,7 +405,7 @@ U8 comWingEngine(U8 comWingID)
 			if (tempPtr != NULL)
 			{
 				workPtr->controlReg = tempPtr;		//Control reg created correctly
-				workPtr->state = CWSidle;
+				workPtr->state = CWSactive;
 			}
 			else
 			{
@@ -422,23 +416,12 @@ U8 comWingEngine(U8 comWingID)
 			
 			break;
 		}
-		//* -- Idle -------- *//
-		case CWSidle:
+		//* -- Active ------ *//
+		case CWSactive:
 		{
 			// -- Treat the Control -- //
 			workPtr->comWingEngine(workPtr->controlReg);
 			// ----------------------- //
-
-			break;
-		}
-		//* -- Busy -------- *//
-		case CWSbusy:
-		{
-			// -- Treat the data -- //
-			workPtr->comWingParse(workPtr->controlReg);
-			// -------------------- //
-
-			workPtr->state = CWSidle;
 
 			break;
 		}
